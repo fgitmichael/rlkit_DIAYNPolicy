@@ -62,7 +62,7 @@ class PPOTrainer(TorchTrainer):
         obs = batch['observations']
         actions = batch['actions']
         next_obs = batch['next_observations']
-        old_log_pi = batch['old_log_pi']
+        old_log_pi = batch['agent_infos']['log_pi']
 
         """
         Policy Loss
@@ -77,10 +77,14 @@ class PPOTrainer(TorchTrainer):
         for i in range(1, delta.size[0]):
             coef[i:] *= gae_lambda
         advantage = torch.sum(coef * delta)
+        if advantage >= 0:
+            e_advantage = advantage + epsilon
+        else:
+            e_advantage = advantage - epsilon
 
         policy_loss = (torch.min(
             torch.exp(old_log_pi-log_pi) * advantage,
-            advantage + advantage/torch.l2_norm(advantage) * epsilon
+            e_advantage
             )).mean()
 
         """
@@ -91,9 +95,8 @@ class PPOTrainer(TorchTrainer):
         new_next_actions, _, _, new_log_pi, *_ = self.policy(
             next_obs, reparameterize=True, return_log_prob=True,
         )
-        self.vf(next_obs)
-
-        v_target = self.reward_scale * rewards + (1. - terminals) * self.discount * v_values
+        v_target = self.reward_scale * rewards \
+            + (1. - terminals) * self.discount * self.vf(next_obs)
         vf_loss = self.vf_criterion(v_pred, v_target.detach())
 
         """

@@ -7,10 +7,8 @@ from rlkit.torch.core import eval_np
 from rlkit.torch.distributions import TanhNormal
 from rlkit.torch.networks import Mlp
 
-
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
-
 
 class TanhGaussianPolicy(Mlp, ExplorationPolicy):
     """
@@ -61,7 +59,8 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
 
     def get_action(self, obs_np, deterministic=False):
         actions = self.get_actions(obs_np[None], deterministic=deterministic)
-        return actions[0, :], {}
+        print(actions)
+        return actions[0, :], {log_pi: log_probs}
 
     def get_actions(self, obs_np, deterministic=False):
         return eval_np(self, obs_np, deterministic=deterministic)[0]
