@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 from torch import nn as nn
+from rlkit.torch.distributions import TanhNormal
 
 import rlkit.torch.pytorch_util as ptu
 from rlkit.core.eval_util import create_stats_ordered_dict
@@ -50,6 +51,10 @@ class PPOTrainer(TorchTrainer):
             lr=vf_lr,
         )
 
+        self.epsilon = epsilon
+        self.gamma = gamma
+        self.gae_lambda = gae_lambda
+
         self.discount = discount
         self.reward_scale = reward_scale
         self.eval_statistics = OrderedDict()
@@ -57,13 +62,12 @@ class PPOTrainer(TorchTrainer):
         self._need_to_update_eval_statistics = True
 
     def train_from_torch(self, batch):
-        print(batch.keys())
         rewards = batch['rewards']
         terminals = batch['terminals']
         obs = batch['observations']
         actions = batch['actions']
         next_obs = batch['next_observations']
-        old_log_pi = batch['agent_infos']['log_pi']
+        old_log_pi = batch['log_prob']
 
         """
         Policy Loss
@@ -73,18 +77,21 @@ class PPOTrainer(TorchTrainer):
         )
 
         # Generalized Advantage Estimator
-        delta = rewards + gamma * vf(next_obs) - vf(obs)
-        coef = torch.ones(delta.size[0])
-        for i in range(1, delta.size[0]):
-            coef[i:] *= gae_lambda
+        delta = rewards + self.gamma * self.vf(next_obs) - self.vf(obs)
+        coef = torch.ones(delta.shape[0])
+        for i in range(1, delta.shape[0]):
+            coef[i:] *= self.gae_lambda
         advantage = torch.sum(coef * delta)
         if advantage >= 0:
-            e_advantage = advantage + epsilon
+            e_advantage = advantage + self.epsilon
         else:
-            e_advantage = advantage - epsilon
+            e_advantage = advantage - self.epsilon
+
+        _, mu, sigma, _, _, _, _, _ = self.policy(obs)
+        log_pi = TanhNormal(mu, sigma).log_prob(actions)
 
         policy_loss = (torch.min(
-            torch.exp(old_log_pi-log_pi) * advantage,
+            torch.exp(log_pi - old_log_pi) * advantage,
             e_advantage
             )).mean()
 
@@ -104,7 +111,7 @@ class PPOTrainer(TorchTrainer):
         Update networks
         """
         self.vf_optimizer.zero_grad()
-        v_loss.backward()
+        vf_loss.backward()
         self.vf_optimizer.step()
 
         self.policy_optimizer.zero_grad()
@@ -120,8 +127,6 @@ class PPOTrainer(TorchTrainer):
             Eval should set this to None.
             This way, these statistics are only computed for one batch.
             """
-            policy_loss = (log_pi - v_new_actions).mean()
-
             self.eval_statistics['VF Loss'] = np.mean(ptu.get_numpy(vf_loss))
             self.eval_statistics['Policy Loss'] = np.mean(ptu.get_numpy(
                 policy_loss

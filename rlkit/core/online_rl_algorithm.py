@@ -58,7 +58,6 @@ class OnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             init_expl_paths = self.expl_data_collector.get_epoch_paths()
             self.replay_buffer.add_paths(init_expl_paths)
             self.expl_data_collector.end_epoch(-1)
-
             gt.stamp('initial exploration', unique=True)
 
         num_trains_per_expl_step = self.num_trains_per_train_loop // self.num_expl_steps_per_train_loop

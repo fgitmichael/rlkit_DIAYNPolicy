@@ -1,7 +1,7 @@
 from gym.envs.mujoco import HalfCheetahEnv
 
 import rlkit.torch.pytorch_util as ptu
-from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
+from rlkit.torch.ppo.ppo_env_replay_buffer import PPOEnvReplayBuffer
 from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.samplers.data_collector.path_collector import MdpPathCollector
@@ -38,7 +38,7 @@ def experiment(variant):
         expl_env,
         policy,
     )
-    replay_buffer = EnvReplayBuffer(
+    replay_buffer = PPOEnvReplayBuffer(
         variant['replay_buffer_size'],
         expl_env,
     )

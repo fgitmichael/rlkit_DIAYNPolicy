@@ -60,7 +60,7 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
     def get_action(self, obs_np, deterministic=False, return_log_prob=True):
         if return_log_prob and not deterministic:
             actions, log_probs = self.get_actions(obs_np[None], deterministic=deterministic, return_log_prob=return_log_prob)
-            return actions[0, :], {"log_pi": log_probs[0, :]}
+            return actions[0, :], {"log_prob": log_probs[0, :]}
         else:
             actions = self.get_actions(obs_np[None], deterministic=deterministic, return_log_prob=return_log_prob)
             return actions[0, :], {}
