@@ -57,13 +57,20 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
             self.log_std = np.log(std)
             assert LOG_SIG_MIN <= self.log_std <= LOG_SIG_MAX
 
-    def get_action(self, obs_np, deterministic=False):
-        actions = self.get_actions(obs_np[None], deterministic=deterministic)
-        print(actions)
-        return actions[0, :], {log_pi: log_probs}
+    def get_action(self, obs_np, deterministic=False, return_log_prob=True):
+        if return_log_prob and not deterministic:
+            actions, log_probs = self.get_actions(obs_np[None], deterministic=deterministic, return_log_prob=return_log_prob)
+            return actions[0, :], {"log_pi": log_probs[0, :]}
+        else:
+            actions = self.get_actions(obs_np[None], deterministic=deterministic, return_log_prob=return_log_prob)
+            return actions[0, :], {}
 
-    def get_actions(self, obs_np, deterministic=False):
-        return eval_np(self, obs_np, deterministic=deterministic)[0]
+    def get_actions(self, obs_np, deterministic=False, return_log_prob=True):
+        outputs = eval_np(self, obs_np, deterministic=deterministic, return_log_prob=return_log_prob)
+        if return_log_prob and not deterministic:
+            return outputs[0], outputs[3]
+        else:
+            return outputs[0]
 
     def forward(
             self,
@@ -116,7 +123,6 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
                     action = tanh_normal.rsample()
                 else:
                     action = tanh_normal.sample()
-
         return (
             action, mean, log_std, log_prob, entropy, std,
             mean_action_log_prob, pre_tanh_value,

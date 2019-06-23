@@ -4,11 +4,12 @@ import rlkit.torch.pytorch_util as ptu
 from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
 from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
-from rlkit.samplers.data_collector import MdpPathCollector
+from rlkit.samplers.data_collector.path_collector import MdpPathCollector
+from rlkit.samplers.data_collector.step_collector import MdpStepCollector
 from rlkit.torch.ppo.policies import TanhGaussianPolicy, MakeDeterministic
 from rlkit.torch.ppo.ppo import PPOTrainer
 from rlkit.torch.networks import FlattenMlp
-from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
+from rlkit.torch.torch_rl_algorithm import TorchOnlineRLAlgorithm
 
 
 def experiment(variant):
@@ -29,11 +30,11 @@ def experiment(variant):
         hidden_sizes=[M, M],
     )
     eval_policy = MakeDeterministic(policy)
-    eval_path_collector = MdpPathCollector(
+    eval_step_collector = MdpPathCollector(
         eval_env,
         eval_policy,
     )
-    expl_path_collector = MdpPathCollector(
+    expl_step_collector = MdpStepCollector(
         expl_env,
         policy,
     )
@@ -47,12 +48,12 @@ def experiment(variant):
         vf=vf,
         **variant['trainer_kwargs']
     )
-    algorithm = TorchBatchRLAlgorithm(
+    algorithm = TorchOnlineRLAlgorithm(
         trainer=trainer,
         exploration_env=expl_env,
         evaluation_env=eval_env,
-        exploration_data_collector=expl_path_collector,
-        evaluation_data_collector=eval_path_collector,
+        exploration_data_collector=expl_step_collector,
+        evaluation_data_collector=eval_step_collector,
         replay_buffer=replay_buffer,
         **variant['algorithm_kwargs']
     )
@@ -80,12 +81,9 @@ if __name__ == "__main__":
         ),
         trainer_kwargs=dict(
             discount=0.99,
-            soft_target_tau=5e-3,
-            target_update_period=1,
             policy_lr=3E-4,
             vf_lr=3E-4,
             reward_scale=1,
-            use_automatic_entropy_tuning=True,
         ),
     )
     setup_logger('name-of-experiment', variant=variant)
