@@ -18,9 +18,8 @@ class PPOTrainer(TorchTrainer):
             policy,
             vf,
 
-            epsilon=0.1,
-            gamma=0.01,
-            gae_lambda=0.01,
+            epsilon=0.05,
+            gae_lambda=0.95,
 
             discount=0.99,
             reward_scale=1.0,
@@ -52,7 +51,6 @@ class PPOTrainer(TorchTrainer):
         )
 
         self.epsilon = epsilon
-        self.gamma = gamma
         self.gae_lambda = gae_lambda
 
         self.discount = discount
@@ -77,10 +75,10 @@ class PPOTrainer(TorchTrainer):
         )
 
         # Generalized Advantage Estimator
-        delta = rewards + self.gamma * self.vf(next_obs) - self.vf(obs)
+        delta = rewards + self.discount * self.vf(next_obs) - self.vf(obs)
         coef = torch.ones(delta.shape[0])
         for i in range(1, delta.shape[0]):
-            coef[i:] *= self.gae_lambda
+            coef[i:] *= self.discount * self.gae_lambda
         advantage = torch.sum(coef * delta)
         if advantage >= 0:
             e_advantage = advantage + self.epsilon
@@ -99,10 +97,6 @@ class PPOTrainer(TorchTrainer):
         VF Loss
         """
         v_pred = self.vf(obs)
-        # Make sure policy accounts for squashing functions like tanh correctly!
-        new_next_actions, _, _, new_log_pi, *_ = self.policy(
-            next_obs, reparameterize=True, return_log_prob=True,
-        )
         v_target = self.reward_scale * rewards \
             + (1. - terminals) * self.discount * self.vf(next_obs)
         vf_loss = self.vf_criterion(v_pred, v_target.detach())

@@ -72,10 +72,13 @@ class MdpStepCollector(StepCollector):
         if self._obs is None:
             self._start_new_rollout()
 
+        print("obs", self._obs)
         action, agent_info = self._policy.get_action(self._obs)
+        print("action", action)
         next_ob, reward, terminal, env_info = (
             self._env.step(action)
         )
+        print("nexob", next_ob)
         if self._render:
             self._env.render(**self._render_kwargs)
         terminal = np.array([terminal])
