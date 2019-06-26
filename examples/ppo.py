@@ -11,8 +11,9 @@ from rlkit.torch.ppo.ppo import PPOTrainer
 from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.torch_rl_algorithm import TorchOnlineRLAlgorithm
 
-
+import torch
 def experiment(variant):
+    torch.autograd.set_detect_anomaly(True)
     expl_env = NormalizedBoxEnv(HalfCheetahEnv())
     eval_env = NormalizedBoxEnv(HalfCheetahEnv())
     obs_dim = expl_env.observation_space.low.size

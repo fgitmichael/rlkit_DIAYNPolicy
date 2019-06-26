@@ -85,7 +85,7 @@ class PPOTrainer(TorchTrainer):
         else:
             e_advantage = advantage - self.epsilon
 
-        _, mu, sigma, _, _, _, _, _ = self.policy(obs)
+        _, mu, _, _, _, sigma, _, _ = self.policy(obs)
         log_pi = TanhNormal(mu, sigma).log_prob(actions)
 
         policy_loss = (torch.min(
