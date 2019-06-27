@@ -28,11 +28,17 @@ def rollout(env, agent, max_path_length=np.inf, render=False):
     terminals = []
     agent_infos = []
     env_infos = []
+    images = []
+
     o = env.reset()
     next_o = None
     path_length = 0
     if render:
-        env.render()
+        img = env.render('rgb_array', 640, 480)
+        env.viewer.cam.fixedcamid = 0
+        env.viewer.cam.type = 2
+        images.append(img)
+
     while path_length < max_path_length:
         a, agent_info = agent.get_action(o)
         next_o, r, d, env_info = env.step(a)
@@ -47,7 +53,8 @@ def rollout(env, agent, max_path_length=np.inf, render=False):
             break
         o = next_o
         if render:
-            env.render()
+            img = env.render('rgb_array', 640, 480)
+            images.append(img)
 
     actions = np.array(actions)
     if len(actions.shape) == 1:
@@ -70,6 +77,7 @@ def rollout(env, agent, max_path_length=np.inf, render=False):
         terminals=np.array(terminals).reshape(-1, 1),
         agent_infos=agent_infos,
         env_infos=env_infos,
+        images=images
     )
 
 

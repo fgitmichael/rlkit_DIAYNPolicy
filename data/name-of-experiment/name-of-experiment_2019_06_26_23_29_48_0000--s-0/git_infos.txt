@@ -1,0 +1,4 @@
+directory: /home/mioto/reinforcement_learning/rlkit_diayn/rlkit/..
+git hash: 56f1979b38e684570cb787937111ef439d1aa0ba
+git branch name: ppo
+
