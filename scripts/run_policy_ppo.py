@@ -4,6 +4,7 @@ import argparse
 import joblib
 import uuid
 from rlkit.core import logger
+import numpy as np
 
 filename = str(uuid.uuid4())
 
@@ -21,22 +22,21 @@ def simulate_policy(args):
     video = cv2.VideoWriter('ppo_test.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 30, (640, 480))
     index = 0
 
-    while True:
-        path = rollout(
-            env,
-            policy,
-            max_path_length=args.H,
-            render=False,
-        )
-        if hasattr(env, "log_diagnostics"):
-            env.log_diagnostics([path])
-        logger.dump_tabular()
+    path = rollout(
+        env,
+        policy,
+        max_path_length=args.H,
+        render=True,
+    )
+    if hasattr(env, "log_diagnostics"):
+        env.log_diagnostics([path])
+    logger.dump_tabular()
 
-        for i, img in enumerate(path['images']):
-            print(i)
-            video.write(img[:,:,::-1].astype(np.uint8))
-            cv2.imwrite("frames/ppo_test/%06d.png" % index, img[:,:,::-1])
-            index += 1
+    for i, img in enumerate(path['images']):
+        print(i)
+        video.write(img[:,:,::-1].astype(np.uint8))
+        cv2.imwrite("frames/ppo_test/%06d.png" % index, img[:,:,::-1])
+        index += 1
 
     video.release()
     print("wrote video")
