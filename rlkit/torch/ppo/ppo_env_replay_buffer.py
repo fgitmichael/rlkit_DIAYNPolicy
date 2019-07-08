@@ -1,24 +1,26 @@
 from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
+from rlkit.torch.core import torch_ify, np_ify
 import numpy as np
+import torch
 
 class PPOEnvReplayBuffer(EnvReplayBuffer):
     def __init__(
             self,
             max_replay_buffer_size,
             env,
+            vf,
             env_info_sizes=None,
 
-            discount,
-            gae_lambda,
-            epsilon
+            discount=0.99,
+            gae_lambda=0.95
     ):
         """
         :param max_replay_buffer_size:
         :param env:
         """
+        self.vf = vf
         self.discount = discount
         self.gae_lambda = gae_lambda
-        self.epsilon = epsilon
 
         self._log_prob = np.zeros((max_replay_buffer_size, 1))
         self._advantage = np.zeros((max_replay_buffer_size, 1))
@@ -29,18 +31,15 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
             env_info_sizes=env_info_sizes
         )
 
+    """Generalized Advantage Estimator"""
     def calculate_advantage(self):
-        # Generalized Advantage Estimator
-        delta = self._rewards + self.discount * self.vf(self._next_obs) - self.vf(self._obs)
-        coef = torch.ones(self._top)
-        for i in range(1, self._top):
-            coef[i:] *= self.discount * self.gae_lambda
-        advantage = torch.sum(coef * delta)
-        if advantage >= 0:
-            e_advantage = advantage + self.epsilon
-        else:
-            e_advantage = advantage - self.epsilon
-        self._advantage[:self._top] = e_advantage
+        delta = torch_ify(self._rewards) + self.discount * self.vf(torch_ify(self._next_obs)) - self.vf(torch_ify(self._observations))
+        coef = torch.ones((self._top, self._top))
+        for i in range(self._top):
+            for j in range(i, self._top):
+                coef[i, j] *= (self.discount * self.gae_lambda) ** (j - i)
+        advantage = torch.matmul(coef, delta)
+        self._advantage[:self._top] = np_ify(advantage)
 
     def add_sample(self, observation, action, reward, terminal,
                    next_observation, agent_info,**kwargs):

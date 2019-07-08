@@ -19,8 +19,6 @@ class PPOTrainer(TorchTrainer):
             vf,
 
             epsilon=0.05,
-            gae_lambda=0.95,
-
             discount=0.99,
             reward_scale=1.0,
 
@@ -51,8 +49,6 @@ class PPOTrainer(TorchTrainer):
         )
 
         self.epsilon = epsilon
-        self.gae_lambda = gae_lambda
-
         self.discount = discount
         self.reward_scale = reward_scale
         self.eval_statistics = OrderedDict()
@@ -66,7 +62,7 @@ class PPOTrainer(TorchTrainer):
         actions = batch['actions']
         next_obs = batch['next_observations']
         old_log_pi = batch['log_prob']
-        e_advantage = batch['advantage']
+        advantage = batch['advantage']
 
         """
         Policy Loss
@@ -78,10 +74,8 @@ class PPOTrainer(TorchTrainer):
         print(torch.transpose(mu, 0, 1), torch.transpose(sigma, 0, 1))
         log_pi = TanhNormal(mu, sigma).log_prob(actions)
 
-        policy_loss = (torch.min(
-            torch.exp(log_pi - old_log_pi) * advantage,
-            e_advantage
-            )).mean()
+        # Advantage Clip
+        policy_loss = torch.clamp(torch.exp(log_pi - old_log_pi.detach()), 1 + self.epsilon, 1 - self.epsilon) * advantage
 
         """
         VF Loss

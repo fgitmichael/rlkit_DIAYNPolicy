@@ -44,6 +44,9 @@ def experiment(variant):
     replay_buffer = PPOEnvReplayBuffer(
         variant['replay_buffer_size'],
         expl_env,
+        vf=vf,
+        gae_lambda=0.95,
+        discount=0.99
     )
     trainer = PPOTrainer(
         env=eval_env,
@@ -84,7 +87,6 @@ if __name__ == "__main__":
         ),
         trainer_kwargs=dict(
             epsilon=0.05,
-            gae_lambda=0.95,
             discount=0.99,
             reward_scale=1.0,
             policy_lr=3E-4,
