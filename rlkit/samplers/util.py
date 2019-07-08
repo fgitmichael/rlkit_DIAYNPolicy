@@ -34,7 +34,10 @@ def rollout(env, agent, max_path_length=np.inf, render=False):
     next_o = None
     path_length = 0
     if render:
-        img = env.render('rgb_array', 640, 480)
+        try:
+            img = env.render('rgb_array', 640, 480)
+        except:
+            img = env.render('rgb_array')
         env.viewer.cam.fixedcamid = 0
         env.viewer.cam.type = 2
         images.append(img)
@@ -53,7 +56,10 @@ def rollout(env, agent, max_path_length=np.inf, render=False):
             break
         o = next_o
         if render:
-            img = env.render('rgb_array', 640, 480)
+            try:
+                img = env.render('rgb_array', 640, 480)
+            except:
+                img = env.render('rgb_array')
             images.append(img)
 
     actions = np.array(actions)

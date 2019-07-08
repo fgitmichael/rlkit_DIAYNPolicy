@@ -66,6 +66,7 @@ class PPOTrainer(TorchTrainer):
         actions = batch['actions']
         next_obs = batch['next_observations']
         old_log_pi = batch['log_prob']
+        e_advantage = batch['advantage']
 
         """
         Policy Loss
@@ -73,19 +74,8 @@ class PPOTrainer(TorchTrainer):
         new_obs_actions, policy_mean, policy_log_std, new_log_pi, *_ = self.policy(
             obs, reparameterize=True, return_log_prob=True,
         )
-
-        # Generalized Advantage Estimator
-        delta = rewards + self.discount * self.vf(next_obs) - self.vf(obs)
-        coef = torch.ones(delta.shape[0])
-        for i in range(1, delta.shape[0]):
-            coef[i:] *= self.discount * self.gae_lambda
-        advantage = torch.sum(coef * delta)
-        if advantage >= 0:
-            e_advantage = advantage + self.epsilon
-        else:
-            e_advantage = advantage - self.epsilon
-
         _, mu, _, _, _, sigma, _, _ = self.policy(obs)
+        print(torch.transpose(mu, 0, 1), torch.transpose(sigma, 0, 1))
         log_pi = TanhNormal(mu, sigma).log_prob(actions)
 
         policy_loss = (torch.min(

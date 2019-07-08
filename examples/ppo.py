@@ -1,21 +1,23 @@
 from gym.envs.mujoco import HalfCheetahEnv
+from gym.envs.classic_control import PendulumEnv
 
 import rlkit.torch.pytorch_util as ptu
 from rlkit.torch.ppo.ppo_env_replay_buffer import PPOEnvReplayBuffer
 from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.samplers.data_collector.path_collector import MdpPathCollector
-from rlkit.samplers.data_collector.step_collector import MdpStepCollector
 from rlkit.torch.ppo.policies import TanhGaussianPolicy, MakeDeterministic
 from rlkit.torch.ppo.ppo import PPOTrainer
 from rlkit.torch.networks import FlattenMlp
-from rlkit.torch.torch_rl_algorithm import TorchOnlineRLAlgorithm
+from rlkit.torch.ppo.ppo_torch_batch_rl_algorithm import PPOTorchBatchRLAlgorithm
 
 import torch
 def experiment(variant):
     torch.autograd.set_detect_anomaly(True)
-    expl_env = NormalizedBoxEnv(HalfCheetahEnv())
-    eval_env = NormalizedBoxEnv(HalfCheetahEnv())
+#    expl_env = NormalizedBoxEnv(HalfCheetahEnv())
+#    eval_env = NormalizedBoxEnv(HalfCheetahEnv())
+    expl_env = NormalizedBoxEnv(PendulumEnv())
+    eval_env = NormalizedBoxEnv(PendulumEnv())
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
 
@@ -35,7 +37,7 @@ def experiment(variant):
         eval_env,
         eval_policy,
     )
-    expl_step_collector = MdpStepCollector(
+    expl_step_collector = MdpPathCollector(
         expl_env,
         policy,
     )
@@ -49,7 +51,7 @@ def experiment(variant):
         vf=vf,
         **variant['trainer_kwargs']
     )
-    algorithm = TorchOnlineRLAlgorithm(
+    algorithm = PPOTorchBatchRLAlgorithm(
         trainer=trainer,
         exploration_env=expl_env,
         evaluation_env=eval_env,
@@ -72,19 +74,21 @@ if __name__ == "__main__":
         layer_size=256,
         replay_buffer_size=128,
         algorithm_kwargs=dict(
-            num_epochs=3,
-            num_eval_steps_per_epoch=5000,
-            num_trains_per_train_loop=1000,
-            num_expl_steps_per_train_loop=1000,
-            min_num_steps_before_training=1000,
-            max_path_length=1000,
-            batch_size=32*8,
+            num_iter=200,
+            num_eval_steps_per_epoch=200,
+            num_trains_per_train_loop=int(2048/64*3),
+            num_expl_steps_per_train_loop=2048,
+            min_num_steps_before_training=100,
+            max_path_length=200,
+            minibatch_size=64,
         ),
         trainer_kwargs=dict(
+            epsilon=0.05,
+            gae_lambda=0.95,
             discount=0.99,
+            reward_scale=1.0,
             policy_lr=3E-4,
             vf_lr=3E-4,
-            reward_scale=1,
         ),
     )
     setup_logger('name-of-experiment', variant=variant)
