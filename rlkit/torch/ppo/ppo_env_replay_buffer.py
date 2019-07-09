@@ -86,3 +86,16 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
             assert key not in batch.keys()
             batch[key] = self._env_infos[key][indices]
         return batch
+
+    def end_epoch(self, epoch):
+        self._observations.fill(0)
+        self._next_obs.fill(0)
+        self._actions.fill(0)
+        self._rewards.fill(0)
+        self._log_prob.fill(0)
+        self._advantage.fill(0)
+        self._terminals.fill(0)
+        for key in self._env_infos.keys():
+            self._env_infos[key].fill(0)
+        self._top = 0
+        self._size = 0
