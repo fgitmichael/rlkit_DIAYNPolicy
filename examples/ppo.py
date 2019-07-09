@@ -5,7 +5,7 @@ import rlkit.torch.pytorch_util as ptu
 from rlkit.torch.ppo.ppo_env_replay_buffer import PPOEnvReplayBuffer
 from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
-from rlkit.samplers.data_collector.path_collector import MdpPathCollector
+from rlkit.torch.ppo.ppo_path_collector import PPOMdpPathCollector
 from rlkit.torch.ppo.policies import TanhGaussianPolicy, MakeDeterministic
 from rlkit.torch.ppo.ppo import PPOTrainer
 from rlkit.torch.networks import FlattenMlp
@@ -33,20 +33,22 @@ def experiment(variant):
         hidden_sizes=[M, M],
     )
     eval_policy = MakeDeterministic(policy)
-    eval_step_collector = MdpPathCollector(
+    eval_step_collector = PPOMdpPathCollector(
         eval_env,
         eval_policy,
+        calculate_advantages=False
     )
-    expl_step_collector = MdpPathCollector(
+    expl_step_collector = PPOMdpPathCollector(
         expl_env,
         policy,
+        calculate_advantages=True,
+        vf=vf,
+        gae_lambda=0.95,
+        discount=0.99
     )
     replay_buffer = PPOEnvReplayBuffer(
         variant['replay_buffer_size'],
         expl_env,
-        vf=vf,
-        gae_lambda=0.95,
-        discount=0.99
     )
     trainer = PPOTrainer(
         env=eval_env,

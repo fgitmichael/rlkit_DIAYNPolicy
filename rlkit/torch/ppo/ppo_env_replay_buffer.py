@@ -1,7 +1,6 @@
 from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
 from rlkit.torch.core import torch_ify, np_ify
 import numpy as np
-import torch
 
 class PPOEnvReplayBuffer(EnvReplayBuffer):
     def __init__(
@@ -10,9 +9,6 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
             env,
             vf,
             env_info_sizes=None,
-
-            discount=0.99,
-            gae_lambda=0.95
     ):
         """
         :param max_replay_buffer_size:
@@ -31,24 +27,46 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
             env_info_sizes=env_info_sizes
         )
 
-    """Generalized Advantage Estimator"""
-    def calculate_advantage(self):
-        delta = torch_ify(self._rewards) + self.discount * self.vf(torch_ify(self._next_obs)) - self.vf(torch_ify(self._observations))
-        coef = torch.ones((self._top, self._top))
-        for i in range(self._top):
-            for j in range(i, self._top):
-                coef[i, j] *= (self.discount * self.gae_lambda) ** (j - i)
-        advantage = torch.matmul(coef, delta)
-        self._advantage[:self._top] = np_ify(advantage)
+    def add_path(self, path):
+        for i, (
+                obs,
+                action,
+                reward,
+                next_obs,
+                terminal,
+                agent_info,
+                env_info,
+                advantage
+        ) in enumerate(zip(
+            path["observations"],
+            path["actions"],
+            path["rewards"],
+            path["next_observations"],
+            path["terminals"],
+            path["agent_infos"],
+            path["env_infos"],
+            path["advantages"]
+        )):
+            self.add_sample(
+                observation=obs,
+                action=action,
+                reward=reward,
+                next_observation=next_obs,
+                terminal=terminal,
+                agent_info=agent_info,
+                env_info=env_info,
+                advantage=advantage
+            )
+        self.terminate_episode()
 
     def add_sample(self, observation, action, reward, terminal,
-                   next_observation, agent_info,**kwargs):
+                   next_observation, agent_info, advantage, **kwargs):
         """
         Log Probability of action is stored in agent_info
         Empty Advantage is stored
         """
         self._log_prob[self._top] = agent_info["log_prob"]
-        self._advantage[self._top] = [0]
+        self._advantage[self._top] = advantage
 
         return super().add_sample(
             observation=observation, 
