@@ -75,7 +75,7 @@ class PPOTrainer(TorchTrainer):
         log_pi = TanhNormal(mu, sigma).log_prob(actions)
 
         # Advantage Clip
-        policy_loss = torch.clamp(torch.exp(log_pi - old_log_pi.detach()), 1 + self.epsilon, 1 - self.epsilon) * advantage
+        policy_loss = torch.sum(torch.clamp(torch.exp(log_pi - old_log_pi.detach()), 1 + self.epsilon, 1 - self.epsilon) * advantage)
 
         """
         VF Loss

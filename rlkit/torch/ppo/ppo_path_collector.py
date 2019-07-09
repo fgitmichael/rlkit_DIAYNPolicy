@@ -1,4 +1,5 @@
 from rlkit.samplers.data_collector.path_collector import MdpPathCollector
+from rlkit.samplers.rollout_functions import rollout
 from rlkit.torch.core import torch_ify, np_ify
 import numpy as np
 import torch
@@ -22,7 +23,14 @@ class PPOMdpPathCollector (MdpPathCollector):
         self.vf = vf
         self.discount = discount
         self.gae_lambda = gae_lambda
-        super().__init__()
+        super().__init__(
+            env,
+            policy,
+
+            max_num_epoch_paths_saved=None,
+            render=False,
+            render_kwargs=None
+        )
 
     """Generalized Advantage Estimator"""
     def add_advantages(self, path, path_len, flag):

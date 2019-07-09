@@ -1,5 +1,4 @@
 from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
-from rlkit.torch.core import torch_ify, np_ify
 import numpy as np
 
 class PPOEnvReplayBuffer(EnvReplayBuffer):
@@ -7,17 +6,12 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
             self,
             max_replay_buffer_size,
             env,
-            vf,
             env_info_sizes=None,
     ):
         """
         :param max_replay_buffer_size:
         :param env:
         """
-        self.vf = vf
-        self.discount = discount
-        self.gae_lambda = gae_lambda
-
         self._log_prob = np.zeros((max_replay_buffer_size, 1))
         self._advantage = np.zeros((max_replay_buffer_size, 1))
 
