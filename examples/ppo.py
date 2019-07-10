@@ -81,8 +81,8 @@ if __name__ == "__main__":
         algorithm_kwargs=dict(
             num_iter=200,
             num_eval_steps_per_epoch=200,
-            num_trains_per_train_loop=int(2048/64*3),
-            num_expl_steps_per_train_loop=2048,
+            num_trains_per_train_loop=int(500/64*3),
+            num_expl_steps_per_train_loop=500,
             min_num_steps_before_training=100,
             max_path_length=200,
             minibatch_size=64,

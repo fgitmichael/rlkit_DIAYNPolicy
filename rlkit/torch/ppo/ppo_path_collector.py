@@ -36,10 +36,10 @@ class PPOMdpPathCollector (MdpPathCollector):
     def add_advantages(self, path, path_len, flag):
         if flag:
             delta = torch_ify(path["rewards"]) + self.discount * self.vf(torch_ify(path["next_observations"])) - self.vf(torch_ify(path["observations"]))
-            coef = torch.ones((path_len, path_len))
+            coef = torch.zeros((path_len, path_len))
             for i in range(path_len):
                 for j in range(i, path_len):
-                    coef[i, j] *= (self.discount * self.gae_lambda) ** (j - i)
+                    coef[i, j] = (self.discount * self.gae_lambda) ** (j - i)
             advantages = np_ify(torch.matmul(coef, delta))
         else:
             advantages = np.zeros(path_len)
