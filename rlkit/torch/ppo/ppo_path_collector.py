@@ -33,16 +33,32 @@ class PPOMdpPathCollector (MdpPathCollector):
         )
 
     """Generalized Advantage Estimator"""
+    # also returns
     def add_advantages(self, path, path_len, flag):
         if flag:
-            delta = torch_ify(path["rewards"]) + self.discount * self.vf(torch_ify(path["next_observations"])) - self.vf(torch_ify(path["observations"]))
-            coef = torch.zeros((path_len, path_len))
-            for i in range(path_len):
-                for j in range(i, path_len):
-                    coef[i, j] = (self.discount * self.gae_lambda) ** (j - i)
-            advantages = np_ify(torch.matmul(coef, delta))
+            next_vf = self.vf(torch_ify(path["next_observations"]))
+            cur_vf = self.vf(torch_ify(path["observations"]))
+            rewards = torch_ify(path["rewards"])
+            delta = rewards + self.discount * next_vf - cur_vf
+            advantages = torch.zeros((path_len))
+            returns = torch.zeros((path_len))
+            gae = 0
+            R = 0
+
+            for i in reversed(range(path_len)):
+                advantages[i] = delta[i] + (self.discount * self.gae_lambda) * gae
+                gae = advantages[i]
+
+                returns[i] = rewards[i] + self.discount * R
+                R = returns[i]
+
+            advantages = np_ify(advantages)
+            advantages = (advantages - advantages.mean()) / advantages.std()
+
+            returns = np_ify(returns)
         else:
             advantages = np.zeros(path_len)
+            returns = np.zeros(path_len)
         return dict(
             observations=path["observations"],
             actions=path["actions"],
@@ -51,7 +67,8 @@ class PPOMdpPathCollector (MdpPathCollector):
             terminals=path["terminals"],
             agent_infos=path["agent_infos"],
             env_infos=path["env_infos"],
-            advantages=advantages
+            advantages=advantages,
+            returns=returns
         )
 
     def collect_new_paths(

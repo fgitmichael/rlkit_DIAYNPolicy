@@ -14,6 +14,7 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
         """
         self._log_prob = np.zeros((max_replay_buffer_size, 1))
         self._advantage = np.zeros((max_replay_buffer_size, 1))
+        self._return = np.zeros((max_replay_buffer_size, 1))
 
         super().__init__(
             max_replay_buffer_size=max_replay_buffer_size,
@@ -30,7 +31,8 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
                 terminal,
                 agent_info,
                 env_info,
-                advantage
+                advantage,
+                returns,
         ) in enumerate(zip(
             path["observations"],
             path["actions"],
@@ -39,7 +41,8 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
             path["terminals"],
             path["agent_infos"],
             path["env_infos"],
-            path["advantages"]
+            path["advantages"],
+            path["returns"],
         )):
             self.add_sample(
                 observation=obs,
@@ -49,22 +52,24 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
                 terminal=terminal,
                 agent_info=agent_info,
                 env_info=env_info,
-                advantage=advantage
+                advantage=advantage,
+                returns=returns
             )
         self.terminate_episode()
 
     def add_sample(self, observation, action, reward, terminal,
-                   next_observation, agent_info, advantage, **kwargs):
+                   next_observation, agent_info, advantage, returns, **kwargs):
         """
         Log Probability of action is stored in agent_info
         Empty Advantage is stored
         """
         self._log_prob[self._top] = agent_info["log_prob"]
         self._advantage[self._top] = advantage
+        self._return[self._top] = returns
 
         return super().add_sample(
             observation=observation, 
-            action=action, 
+            action=action,
             reward=reward, 
             terminal=terminal,
             next_observation=next_observation,
@@ -80,7 +85,8 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
             terminals=self._terminals[indices],
             next_observations=self._next_obs[indices],
             log_prob=self._log_prob[indices],
-            advantage=self._advantage[indices]
+            advantage=self._advantage[indices],
+            returns=self._return[indices],
         )
         for key in self._env_info_keys:
             assert key not in batch.keys()
@@ -94,6 +100,7 @@ class PPOEnvReplayBuffer(EnvReplayBuffer):
         self._rewards.fill(0)
         self._log_prob.fill(0)
         self._advantage.fill(0)
+        self._return.fill(0)
         self._terminals.fill(0)
         for key in self._env_infos.keys():
             self._env_infos[key].fill(0)
