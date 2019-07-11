@@ -44,7 +44,7 @@ def experiment(variant):
         calculate_advantages=True,
         vf=vf,
         gae_lambda=0.95,
-        discount=0.99
+        discount=0.95,
     )
     replay_buffer = PPOEnvReplayBuffer(
         variant['replay_buffer_size'],
@@ -76,12 +76,12 @@ if __name__ == "__main__":
     variant = dict(
         algorithm="PPO",
         version="normal",
-        layer_size=256,
-        replay_buffer_size=128,
+        layer_size=64,
+        replay_buffer_size=200,
         algorithm_kwargs=dict(
-            num_iter=500,
+            num_iter=1500,
             num_eval_steps_per_epoch=200,
-            num_trains_per_train_loop=int(500/64*3),
+            num_trains_per_train_loop=int(200/64),
             num_expl_steps_per_train_loop=500,
             min_num_steps_before_training=100,
             max_path_length=200,
@@ -89,12 +89,12 @@ if __name__ == "__main__":
         ),
         trainer_kwargs=dict(
             epsilon=0.05,
-            discount=0.99,
+            discount=0.95,
             reward_scale=1.0,
-            policy_lr=3E-4,
-            vf_lr=3E-4,
+            policy_lr=3e-4,
+            vf_lr=3e-4,
         ),
     )
     setup_logger('name-of-experiment', variant=variant)
-    # ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
+    #ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
     experiment(variant)

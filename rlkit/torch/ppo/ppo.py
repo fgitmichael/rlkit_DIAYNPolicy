@@ -63,6 +63,7 @@ class PPOTrainer(TorchTrainer):
         next_obs = batch['next_observations']
         old_log_pi = batch['log_prob']
         advantage = batch['advantage']
+        returns = batch['returns']
 
         """
         Policy Loss
@@ -81,9 +82,8 @@ class PPOTrainer(TorchTrainer):
         VF Loss
         """
         v_pred = self.vf(obs)
-        v_target = self.reward_scale * rewards \
-            + (1. - terminals) * self.discount * self.vf(next_obs)
-        vf_loss = self.vf_criterion(v_pred, v_target.detach())
+        v_target = returns
+        vf_loss = self.vf_criterion(v_pred, v_target)
 
         """
         Update networks
