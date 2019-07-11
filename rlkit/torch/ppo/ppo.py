@@ -70,12 +70,12 @@ class PPOTrainer(TorchTrainer):
         new_obs_actions, policy_mean, policy_log_std, new_log_pi, *_ = self.policy(
             obs, reparameterize=True, return_log_prob=True,
         )
-        _, mu, _, _, _, sigma, _, _ = self.policy(obs)
-        print(torch.transpose(mu, 0, 1), torch.transpose(sigma, 0, 1))
-        log_pi = TanhNormal(mu, sigma).log_prob(actions)
 
         # Advantage Clip
-        policy_loss = torch.sum(torch.clamp(torch.exp(log_pi - old_log_pi.detach()), 1 + self.epsilon, 1 - self.epsilon) * advantage)
+        ratio = torch.exp(new_log_pi - old_log_pi)
+        left = ratio * advantage
+        right = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantage
+        policy_loss = (-1 * torch.min(left, right)).mean()
 
         """
         VF Loss
@@ -118,8 +118,12 @@ class PPOTrainer(TorchTrainer):
                 ptu.get_numpy(v_target),
             ))
             self.eval_statistics.update(create_stats_ordered_dict(
-                'Log Pis',
-                ptu.get_numpy(log_pi),
+                'New Log Pis',
+                ptu.get_numpy(new_log_pi),
+            ))
+            self.eval_statistics.update(create_stats_ordered_dict(
+                'Old Log Pis',
+                ptu.get_numpy(old_log_pi),
             ))
             self.eval_statistics.update(create_stats_ordered_dict(
                 'Policy mu',
