@@ -48,8 +48,8 @@ def experiment(variant):
         policy,
         calculate_advantages=True,
         vf=vf,
-        gae_lambda=0.95,
-        discount=0.99,
+        gae_lambda=0.97,
+        discount=0.995,
     )
     replay_buffer = PPOEnvReplayBuffer(
         variant['replay_buffer_size'],
@@ -100,8 +100,7 @@ if __name__ == "__main__":
         trainer_kwargs=dict(
             epsilon=0.2,
             reward_scale=1.0,
-            policy_lr=3e-4,
-            vf_lr=3e-4,
+            lr=3e-4,
         ),
     )
     setup_logger('name-of-experiment', variant=variant)

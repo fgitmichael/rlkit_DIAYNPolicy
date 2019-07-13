@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 from torch import nn as nn
-from rlkit.torch.distributions import TanhNormal
+from rlkit.torch.distributions import Normal, TanhNormal
 
 import rlkit.torch.pytorch_util as ptu
 from rlkit.core.eval_util import create_stats_ordered_dict
@@ -21,8 +21,7 @@ class PPOTrainer(TorchTrainer):
             epsilon=0.05,
             reward_scale=1.0,
 
-            policy_lr=1e-3,
-            vf_lr=1e-3,
+            lr=1e-3,
             optimizer_class=optim.Adam,
 
             plotter=None,
@@ -38,13 +37,9 @@ class PPOTrainer(TorchTrainer):
 
         self.vf_criterion = nn.MSELoss()
 
-        self.policy_optimizer = optimizer_class(
-            self.policy.parameters(),
-            lr=policy_lr,
-        )
-        self.vf_optimizer = optimizer_class(
-            self.vf.parameters(),
-            lr=vf_lr,
+        self.optimizer = optimizer_class(
+            list(self.vf.parameters()) + list(self.policy.parameters()),
+            lr=lr,
         )
 
         self.epsilon = epsilon
@@ -52,6 +47,8 @@ class PPOTrainer(TorchTrainer):
         self.eval_statistics = OrderedDict()
         self._n_train_steps_total = 0
         self._need_to_update_eval_statistics = True
+
+        self.last_approx_kl = None
 
     def train_from_torch(self, batch):
         obs = batch['observations']
@@ -64,8 +61,7 @@ class PPOTrainer(TorchTrainer):
         Policy Loss
         """
         _, policy_mean, policy_log_std, _, _, policy_std, _, _ = self.policy(obs)
-        print(actions.min(), actions.max())
-        new_log_pi = TanhNormal(policy_mean, policy_std).log_prob(actions)
+        new_log_pi = TanhNormal(policy_mean, policy_std).log_prob(actions).sum(1, keepdim=True)
 
         # Advantage Clip
         ratio = torch.exp(new_log_pi - old_log_pi)
@@ -84,18 +80,23 @@ class PPOTrainer(TorchTrainer):
         """
         Update networks
         """
-        self.vf_optimizer.zero_grad()
-        vf_loss.backward()
-        self.vf_optimizer.step()
+        loss = policy_loss + vf_loss
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
-        self.policy_optimizer.zero_grad()
-        policy_loss.backward()
-        self.policy_optimizer.step()
+        if self.last_approx_kl is None or not self._need_to_update_eval_statistics:
+            self.last_approx_kl = (old_log_pi - new_log_pi).detach()
+        
+        approx_ent = -new_log_pi
 
         """
         Save some statistics for eval
         """
         if self._need_to_update_eval_statistics:
+            policy_grads = torch.cat([p.grad.flatten() for p in self.policy.parameters()])
+            value_grads = torch.cat([p.grad.flatten() for p in self.vf.parameters()])
+
             self._need_to_update_eval_statistics = False
             """
             Eval should set this to None.
@@ -112,6 +113,22 @@ class PPOTrainer(TorchTrainer):
             self.eval_statistics.update(create_stats_ordered_dict(
                 'V Target',
                 ptu.get_numpy(v_target),
+            ))
+            self.eval_statistics.update(create_stats_ordered_dict(
+                'Policy Gradients',
+                ptu.get_numpy(policy_grads),
+            ))
+            self.eval_statistics.update(create_stats_ordered_dict(
+                'Value Gradients',
+                ptu.get_numpy(value_grads),
+            ))
+            self.eval_statistics.update(create_stats_ordered_dict(
+                'Policy KL',
+                ptu.get_numpy(self.last_approx_kl),
+            ))
+            self.eval_statistics.update(create_stats_ordered_dict(
+                'Policy Entropy',
+                ptu.get_numpy(approx_ent),
             ))
             self.eval_statistics.update(create_stats_ordered_dict(
                 'New Log Pis',
