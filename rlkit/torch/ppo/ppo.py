@@ -19,7 +19,6 @@ class PPOTrainer(TorchTrainer):
             vf,
 
             epsilon=0.05,
-            discount=0.99,
             reward_scale=1.0,
 
             policy_lr=1e-3,
@@ -49,33 +48,30 @@ class PPOTrainer(TorchTrainer):
         )
 
         self.epsilon = epsilon
-        self.discount = discount
         self.reward_scale = reward_scale
         self.eval_statistics = OrderedDict()
         self._n_train_steps_total = 0
         self._need_to_update_eval_statistics = True
 
     def train_from_torch(self, batch):
-        rewards = batch['rewards']
-        terminals = batch['terminals']
         obs = batch['observations']
-        actions = batch['actions']
-        next_obs = batch['next_observations']
         old_log_pi = batch['log_prob']
         advantage = batch['advantage']
         returns = batch['returns']
+        actions = batch['actions']
 
         """
         Policy Loss
         """
-        new_obs_actions, policy_mean, policy_log_std, new_log_pi, *_ = self.policy(
-            obs, reparameterize=True, return_log_prob=True,
-        )
+        _, policy_mean, policy_log_std, _, _, policy_std, _, _ = self.policy(obs)
+        print(actions.min(), actions.max())
+        new_log_pi = TanhNormal(policy_mean, policy_std).log_prob(actions)
 
         # Advantage Clip
         ratio = torch.exp(new_log_pi - old_log_pi)
         left = ratio * advantage
         right = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantage
+
         policy_loss = (-1 * torch.min(left, right)).mean()
 
         """
