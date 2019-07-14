@@ -39,17 +39,18 @@ class PPOMdpPathCollector (MdpPathCollector):
             next_vf = self.vf(torch_ify(path["next_observations"]))
             cur_vf = self.vf(torch_ify(path["observations"]))
             rewards = torch_ify(path["rewards"])
-            delta = rewards + self.discount * next_vf - cur_vf
+            term = (1 - torch_ify(path["terminals"].astype(np.float32)))
+            delta = rewards + term * self.discount * next_vf - cur_vf
             advantages = torch.zeros((path_len))
             returns = torch.zeros((path_len))
             gae = 0
             R = 0
 
             for i in reversed(range(path_len)):
-                advantages[i] = delta[i] + (self.discount * self.gae_lambda) * gae
+                advantages[i] = delta[i] + term[i] * (self.discount * self.gae_lambda) * gae
                 gae = advantages[i]
 
-                returns[i] = rewards[i] + self.discount * R
+                returns[i] = rewards[i] + term[i] * self.discount * R
                 R = returns[i]
 
             advantages = np_ify(advantages)

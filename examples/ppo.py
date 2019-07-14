@@ -1,3 +1,4 @@
+import gym
 from gym.envs.mujoco import HalfCheetahEnv
 from gym.envs.classic_control import PendulumEnv
 
@@ -11,13 +12,17 @@ from rlkit.torch.ppo.ppo import PPOTrainer
 from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.ppo.ppo_torch_batch_rl_algorithm import PPOTorchBatchRLAlgorithm
 
+from sanity import SanityEnv
+
 import torch
+
+
 def experiment(variant):
     torch.autograd.set_detect_anomaly(True)
-#    expl_env = NormalizedBoxEnv(HalfCheetahEnv())
-#    eval_env = NormalizedBoxEnv(HalfCheetahEnv())
-    expl_env = NormalizedBoxEnv(PendulumEnv())
-    eval_env = NormalizedBoxEnv(PendulumEnv())
+    expl_env = NormalizedBoxEnv(HalfCheetahEnv())
+    eval_env = NormalizedBoxEnv(HalfCheetahEnv())
+    # expl_env = NormalizedBoxEnv(PendulumEnv())
+    # eval_env = NormalizedBoxEnv(PendulumEnv())
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
 
@@ -43,8 +48,8 @@ def experiment(variant):
         policy,
         calculate_advantages=True,
         vf=vf,
-        gae_lambda=0.95,
-        discount=0.95,
+        gae_lambda=0.97,
+        discount=0.995,
     )
     replay_buffer = PPOEnvReplayBuffer(
         variant['replay_buffer_size'],
@@ -73,26 +78,29 @@ def experiment(variant):
 
 if __name__ == "__main__":
     # noinspection PyTypeChecker
+    T = 2048
+    max_ep_len = 1000
+    epochs = 10
+    minibatch_size = 64
+
     variant = dict(
         algorithm="PPO",
         version="normal",
         layer_size=64,
-        replay_buffer_size=200,
+        replay_buffer_size=T,
         algorithm_kwargs=dict(
-            num_iter=1500,
-            num_eval_steps_per_epoch=200,
-            num_trains_per_train_loop=int(200/64),
-            num_expl_steps_per_train_loop=500,
-            min_num_steps_before_training=100,
-            max_path_length=200,
-            minibatch_size=64,
+            num_iter=int(1e6 // T),
+            num_eval_steps_per_epoch=max_ep_len,
+            num_trains_per_train_loop=T // minibatch_size * epochs,
+            num_expl_steps_per_train_loop=T,
+            min_num_steps_before_training=0,
+            max_path_length=max_ep_len,
+            minibatch_size=minibatch_size,
         ),
         trainer_kwargs=dict(
-            epsilon=0.05,
-            discount=0.95,
+            epsilon=0.2,
             reward_scale=1.0,
-            policy_lr=3e-4,
-            vf_lr=3e-4,
+            lr=3e-4,
         ),
     )
     setup_logger('name-of-experiment', variant=variant)
