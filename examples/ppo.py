@@ -19,10 +19,12 @@ import torch
 
 def experiment(variant):
     torch.autograd.set_detect_anomaly(True)
-    expl_env = NormalizedBoxEnv(HalfCheetahEnv())
-    eval_env = NormalizedBoxEnv(HalfCheetahEnv())
+    #expl_env = NormalizedBoxEnv(HalfCheetahEnv())
+    #eval_env = NormalizedBoxEnv(HalfCheetahEnv())
     # expl_env = NormalizedBoxEnv(PendulumEnv())
     # eval_env = NormalizedBoxEnv(PendulumEnv())
+    expl_env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
+    eval_env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
 
@@ -103,6 +105,6 @@ if __name__ == "__main__":
             lr=3e-4,
         ),
     )
-    setup_logger('PPO', variant=variant)
+    setup_logger('PPOBipedalWalkerV2', variant=variant)
     #ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
     experiment(variant)

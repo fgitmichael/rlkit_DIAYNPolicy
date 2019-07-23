@@ -12,6 +12,7 @@ class DIAYNTorchOnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
     def __init__(
             self,
             trainer,
+            policy # get policy object for assigning skill
             exploration_env,
             evaluation_env,
             exploration_data_collector: StepCollector,
@@ -25,9 +26,6 @@ class DIAYNTorchOnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             num_trains_per_train_loop,
             num_train_loops_per_epoch=1,
             min_num_steps_before_training=0,
-
-            # get policy object for assigning skill
-            policy
     ):
         super().__init__(
             trainer,

@@ -3,6 +3,7 @@ import torch
 from torch import nn as nn
 
 from rlkit.torch.sac.policies import TanhGaussianPolicy
+from rlkit.policies.base import Policy
 
 class SkillTanhGaussianPolicy(TanhGaussianPolicy):
     def __init__(

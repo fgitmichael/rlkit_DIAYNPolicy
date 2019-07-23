@@ -6,10 +6,10 @@ from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.torch.sac.diayn.diayn_path_collector import DIAYNMdpPathCollector
 from rlkit.samplers.data_collector.step_collector import MdpStepCollector
-from rlkit.torch.sac.diayn.policies import DIAYNTanhGaussianPolicy, MakeDeterministic
+from rlkit.torch.sac.diayn.policies import SkillTanhGaussianPolicy, MakeDeterministic
 from rlkit.torch.sac.diayn.diayn import DIAYNTrainer
 from rlkit.torch.networks import FlattenMlp
-from rlkit.torch.sac.diayn.diayn_torch_online_algorithm import DIAYNTorchOnlineRLAlgorithm
+from rlkit.torch.sac.diayn.diayn_torch_online_rl_algorithm import DIAYNTorchOnlineRLAlgorithm
 
 
 def experiment(variant):

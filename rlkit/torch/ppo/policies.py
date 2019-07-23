@@ -56,11 +56,11 @@ class DiscretePolicy(Mlp, ExplorationPolicy):
             action = torch.zeros(self.output_size)
             categorical =  Categorical(softmax_probs)
             if reparameterize is True:
-                    reparam = softmax_probs+ torch.randn(self.output_size)
-                    r_categorical = Categorical(reparam / torch.sum(reparam))
-                    index = r_categorical.sample()
-                else:
-                    index = categorical.sample()
+                reparam = softmax_probs+ torch.randn(self.output_size)
+                r_categorical = Categorical(reparam / torch.sum(reparam))
+                index = r_categorical.sample()
+            else:
+                index = categorical.sample()
             if return_log_prob:
                 log_prob = categorical.log_prob(index)
             action[index] = 1
