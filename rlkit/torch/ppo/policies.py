@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch import nn as nn
+import torch.nn.functional as F
 
 from rlkit.policies.base import ExplorationPolicy, Policy
 from rlkit.torch.core import eval_np
@@ -10,24 +11,65 @@ from rlkit.torch.networks import Mlp
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
 
+class DiscretePolicy(Mlp, ExplorationPolicy):
+    def __init__(
+            self,
+            hidden_sizes,
+            obs_dim,
+            action_dim,
+            init_w=1e-3,
+            **kwargs
+    ):
+        super().__init__(
+            hidden_sizes,
+            input_size=obs_dim,
+            output_size=action_dim,
+            init_w=init_w,
+            output_activation=F.Softmax
+            **kwargs
+        )
+
+    def forward(
+            self,
+            obs,
+            reparameterize=True,
+            deterministic=False,
+            return_log_prob=False,
+    ):
+        """
+        :param obs: Observation
+        :param deterministic: If True, do not sample
+        :param return_log_prob: If True, return a sample and its log probability
+        """
+        h = obs
+        for i, fc in enumerate(self.fcs):
+            h = self.hidden_activation(fc(h))
+        softmax_probs = self.last_fc(h)
+
+        log_prob = None
+        entropy = None
+        mean_action_log_prob = None
+        if deterministic:
+            action = torch.zeros(self.output_size)
+            action[torch.argmax(softmax_probs)] = 1
+        else:
+            action = torch.zeros(self.output_size)
+            categorical =  Categorical(softmax_probs)
+            if reparameterize is True:
+                    reparam = softmax_probs+ torch.randn(self.output_size)
+                    r_categorical = Categorical(reparam / torch.sum(reparam))
+                    index = r_categorical.sample()
+                else:
+                    index = categorical.sample()
+            if return_log_prob:
+                log_prob = categorical.log_prob(index)
+            action[index] = 1
+        return (
+            action, mean, log_std, log_prob, entropy, std,
+            mean_action_log_prob
+        )
+
 class TanhGaussianPolicy(Mlp, ExplorationPolicy):
-    """
-    Usage:
-
-    ```
-    policy = TanhGaussianPolicy(...)
-    action, mean, log_std, _ = policy(obs)
-    action, mean, log_std, _ = policy(obs, deterministic=True)
-    action, mean, log_std, log_prob = policy(obs, return_log_prob=True)
-    ```
-
-    Here, mean and log_std are the mean and log_std of the Gaussian that is
-    sampled from.
-
-    If deterministic is True, action = tanh(mean).
-    If return_log_prob is False (default), log_prob = None
-        This is done because computing the log_prob can be a bit expensive.
-    """
     def __init__(
             self,
             hidden_sizes,
