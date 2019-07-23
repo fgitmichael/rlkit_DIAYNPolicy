@@ -25,6 +25,8 @@ def experiment(variant):
     # eval_env = NormalizedBoxEnv(PendulumEnv())
     expl_env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
     eval_env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
+    #expl_env = NormalizedBoxEnv(gym.make("LunarLanderContinuous-v2"))
+    #eval_env = NormalizedBoxEnv(gym.make("LunarLanderContinuous-v2"))
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
 

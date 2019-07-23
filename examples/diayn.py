@@ -39,14 +39,14 @@ def experiment(variant):
         output_size=1,
         hidden_sizes=[M, M],
     )
-    policy = DIAYNTanhGaussianPolicy(
+    policy = SkillTanhGaussianPolicy(
         obs_dim=obs_dim,
         action_dim=action_dim,
         hidden_sizes=[M, M],
         skill_dim=10
     )
     eval_policy = MakeDeterministic(policy)
-    eval_path_collector = DIAYNMdpPathCollector(
+    eval_path_collector = MdpPathCollector(
         eval_env,
         eval_policy,
     )

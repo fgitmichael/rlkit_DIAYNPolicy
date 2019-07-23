@@ -12,7 +12,7 @@ class DIAYNTorchOnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
     def __init__(
             self,
             trainer,
-            policy # get policy object for assigning skill
+            policy, # get policy object for assigning skill
             exploration_env,
             evaluation_env,
             exploration_data_collector: StepCollector,
