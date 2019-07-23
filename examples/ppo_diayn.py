@@ -6,8 +6,8 @@ import rlkit.torch.pytorch_util as ptu
 from rlkit.torch.ppo.ppo_env_replay_buffer import PPOEnvReplayBuffer
 from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
-from rlkit.torch.ppo.ppo_path_collector import PPOMdpPathCollector
-from rlkit.torch.ppo.policies import TanhGaussianPolicy, MakeDeterministic
+from rlkit.torch.h_diayn.manager_ppo_path_collector import ManagerPPOMdpPathCollector
+from rlkit.torch.ppo.policies import DiscretePolicy, MakeDeterministic
 from rlkit.torch.ppo.ppo import PPOTrainer
 from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.ppo.ppo_torch_batch_rl_algorithm import PPOTorchBatchRLAlgorithm
@@ -15,7 +15,6 @@ from rlkit.torch.ppo.ppo_torch_batch_rl_algorithm import PPOTorchBatchRLAlgorith
 from sanity import SanityEnv
 
 import torch
-
 
 def experiment(variant):
     torch.autograd.set_detect_anomaly(True)
@@ -32,20 +31,23 @@ def experiment(variant):
         output_size=1,
         hidden_sizes=[M, M],
     )
-    policy = TanhGaussianPolicy(
+    policy = DiscretePolicy(
         obs_dim=obs_dim,
         action_dim=action_dim,
         hidden_sizes=[M, M],
     )
     eval_policy = MakeDeterministic(policy)
+    worker = 
     eval_step_collector = PPOMdpPathCollector(
         eval_env,
         eval_policy,
+        worker,
         calculate_advantages=False
     )
     expl_step_collector = PPOMdpPathCollector(
         expl_env,
         policy,
+        worker,
         calculate_advantages=True,
         vf=vf,
         gae_lambda=0.97,
