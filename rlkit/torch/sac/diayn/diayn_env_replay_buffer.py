@@ -6,13 +6,14 @@ class DIAYNEnvReplayBuffer(EnvReplayBuffer):
             self,
             max_replay_buffer_size,
             env,
+            skill_dim,
             env_info_sizes=None,
     ):
         """
         :param max_replay_buffer_size:
         :param env:
         """
-        self._skill = np.zeros((max_replay_buffer_size, 1))
+        self._skill = np.zeros((max_replay_buffer_size, skill_dim))
 
         super().__init__(
             max_replay_buffer_size=max_replay_buffer_size,

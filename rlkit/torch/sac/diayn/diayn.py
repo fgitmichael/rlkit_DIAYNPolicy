@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 from torch import nn as nn
+import torch.nn.functional as F
 
 import rlkit.torch.pytorch_util as ptu
 from rlkit.core.eval_util import create_stats_ordered_dict
@@ -101,17 +102,18 @@ class DIAYNTrainer(TorchTrainer):
         """
         DF Loss and Intrinsic Reward
         """
+        z_hat = torch.argmax(skills, dim=1)
         d_pred = self.df(next_obs)
         rewards, pred_z = torch.max(F.log_softmax(d_pred), dim=1, keepdim=True)
-        df_loss = self.df_criterion(d_pred, skills)
+        df_loss = self.df_criterion(d_pred, z_hat)
 
         """
         Policy and Alpha Loss
         """
-        obs_skills = np.concatenate((obs, skills), axis=1)
         new_obs_actions, policy_mean, policy_log_std, log_pi, *_ = self.policy(
-            obs_skills, reparameterize=True, return_log_prob=True,
+            obs, skill_vec=skills, reparameterize=True, return_log_prob=True,
         )
+        obs_skills = torch.cat((obs, skills), dim=1)
         if self.use_automatic_entropy_tuning:
             alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
             self.alpha_optimizer.zero_grad()
@@ -134,11 +136,10 @@ class DIAYNTrainer(TorchTrainer):
         q1_pred = self.qf1(obs_skills, actions)
         q2_pred = self.qf2(obs_skills, actions)
         # Make sure policy accounts for squashing functions like tanh correctly!
-        next_obs_skills = np.concatenate((next_obs, skills), axis=1)
-
         new_next_actions, _, _, new_log_pi, *_ = self.policy(
-            next_obs_skills, reparameterize=True, return_log_prob=True,
+            next_obs, skill_vec = skills, reparameterize=True, return_log_prob=True,
         )
+        next_obs_skills = torch.cat((next_obs, skills), dim=1)
         target_q_values = torch.min(
             self.target_qf1(next_obs_skills, new_next_actions),
             self.target_qf2(next_obs_skills, new_next_actions),
@@ -181,7 +182,8 @@ class DIAYNTrainer(TorchTrainer):
         """
         Save some statistics for eval
         """
-        df_accuracy = torch.sum(torch.eq(skills, pred_z.reshape(1, list(pred_z.size())[0])[0])).float()/list(pred_z.size())[0]
+        df_accuracy = torch.sum(torch.eq(z_hat, pred_z.reshape(1, list(pred_z.size())[0])[0])).float()/list(pred_z.size())[0]
+
         if self._need_to_update_eval_statistics:
             self._need_to_update_eval_statistics = False
             """

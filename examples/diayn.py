@@ -17,36 +17,42 @@ def experiment(variant):
     eval_env = NormalizedBoxEnv(HalfCheetahEnv())
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
+    skill_dim = 10
 
     M = variant['layer_size']
     qf1 = FlattenMlp(
-        input_size=obs_dim + action_dim,
+        input_size=obs_dim + action_dim + skill_dim,
         output_size=1,
         hidden_sizes=[M, M],
     )
     qf2 = FlattenMlp(
-        input_size=obs_dim + action_dim,
+        input_size=obs_dim + action_dim + skill_dim,
         output_size=1,
         hidden_sizes=[M, M],
     )
     target_qf1 = FlattenMlp(
-        input_size=obs_dim + action_dim,
+        input_size=obs_dim + action_dim + skill_dim,
         output_size=1,
         hidden_sizes=[M, M],
     )
     target_qf2 = FlattenMlp(
-        input_size=obs_dim + action_dim,
+        input_size=obs_dim + action_dim + skill_dim,
         output_size=1,
         hidden_sizes=[M, M],
     )
+    df = FlattenMlp(
+        input_size=obs_dim,
+        output_size=skill_dim,
+        hidden_sizes=[M, M],
+    )
     policy = SkillTanhGaussianPolicy(
-        obs_dim=obs_dim,
+        obs_dim=obs_dim + skill_dim,
         action_dim=action_dim,
         hidden_sizes=[M, M],
-        skill_dim=10
+        skill_dim=skill_dim
     )
     eval_policy = MakeDeterministic(policy)
-    eval_path_collector = MdpPathCollector(
+    eval_path_collector = DIAYNMdpPathCollector(
         eval_env,
         eval_policy,
     )
@@ -57,12 +63,14 @@ def experiment(variant):
     replay_buffer = DIAYNEnvReplayBuffer(
         variant['replay_buffer_size'],
         expl_env,
+        skill_dim,
     )
     trainer = DIAYNTrainer(
         env=eval_env,
         policy=policy,
         qf1=qf1,
         qf2=qf2,
+        df=df,
         target_qf1=target_qf1,
         target_qf2=target_qf2,
         **variant['trainer_kwargs']

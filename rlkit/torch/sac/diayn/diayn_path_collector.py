@@ -1,4 +1,5 @@
 from rlkit.samplers.data_collector.path_collector import MdpPathCollector
+from rlkit.samplers.rollout_functions import rollout
 import random
 
 class DIAYNMdpPathCollector(MdpPathCollector):
@@ -16,7 +17,7 @@ class DIAYNMdpPathCollector(MdpPathCollector):
                 num_steps - num_steps_collected,
             )
 
-            self._policy.skill = random.randint(0, self._policy.skill_dim-1)
+            self._policy.stochastic_policy.skill = random.randint(0, self._policy.stochastic_policy.skill_dim-1)
 
             path = rollout(
                 self._env,

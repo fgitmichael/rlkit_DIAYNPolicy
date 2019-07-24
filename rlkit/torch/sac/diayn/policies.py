@@ -4,6 +4,11 @@ from torch import nn as nn
 
 from rlkit.torch.sac.policies import TanhGaussianPolicy
 from rlkit.policies.base import Policy
+from rlkit.torch.core import eval_np
+from rlkit.torch.distributions import TanhNormal
+
+LOG_SIG_MAX = 2
+LOG_SIG_MIN = -20
 
 class SkillTanhGaussianPolicy(TanhGaussianPolicy):
     def __init__(
@@ -29,13 +34,12 @@ class SkillTanhGaussianPolicy(TanhGaussianPolicy):
 
     def get_action(self, obs_np, deterministic=False):
         # generate (iters, skill_dim) matrix that stacks one-hot skill vectors
-        print(obs_np.shape)
-        skill_vec = np.zeros(obs_np.shape[0], self.skill_dim)
-        skill_vec[:, self.skill] += 1
-        obs_np = np.concatenate((obs_np, skill_vec), axis=1)
-
+        # online reinforcement learning
+        skill_vec = np.zeros(self.skill_dim)
+        skill_vec[self.skill] += 1
+        obs_np = np.concatenate((obs_np, skill_vec), axis=0)
         actions = self.get_actions(obs_np[None], deterministic=deterministic)
-        return actions[0, :], {"skill": self.skill_vec}
+        return actions[0, :], {"skill": skill_vec}
 
     def get_actions(self, obs_np, deterministic=False):
         return eval_np(self, obs_np, deterministic=deterministic)[0]
@@ -43,6 +47,7 @@ class SkillTanhGaussianPolicy(TanhGaussianPolicy):
     def forward(
             self,
             obs,
+            skill_vec=None,
             reparameterize=True,
             deterministic=False,
             return_log_prob=False,
@@ -52,7 +57,11 @@ class SkillTanhGaussianPolicy(TanhGaussianPolicy):
         :param deterministic: If True, do not sample
         :param return_log_prob: If True, return a sample and its log probability
         """
-        h = obs
+        if skill_vec is None:
+            h = obs
+        else:
+            h = torch.cat((obs, skill_vec), dim=1)
+
         for i, fc in enumerate(self.fcs):
             h = self.hidden_activation(fc(h))
         mean = self.last_fc(h)
