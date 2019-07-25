@@ -38,13 +38,13 @@ def experiment(variant):
     )
     eval_policy = MakeDeterministic(policy)
     worker = 
-    eval_step_collector = PPOMdpPathCollector(
+    eval_step_collector = ManagerPPOMdpPathCollector(
         eval_env,
         eval_policy,
         worker,
         calculate_advantages=False
     )
-    expl_step_collector = PPOMdpPathCollector(
+    expl_step_collector = ManagerPPOMdpPathCollector(
         expl_env,
         policy,
         worker,
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     minibatch_size = 64
 
     variant = dict(
-        algorithm="PPO",
+        algorithm="PPO_DIAYN",
         version="normal",
         layer_size=64,
         replay_buffer_size=T,
