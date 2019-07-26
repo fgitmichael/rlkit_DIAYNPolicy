@@ -1,5 +1,5 @@
 from rlkit.torch.ppo.ppo_path_collector import PPOMdpPathCollector
-from rlkit.torch.h_diayn.rollout_functions import rollout
+from rlkit.torch.h_diayn.h_diayn_rollout_functions import rollout
 from rlkit.torch.core import torch_ify, np_ify
 import numpy as np
 import torch

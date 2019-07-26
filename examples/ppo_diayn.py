@@ -1,14 +1,13 @@
 import gym
 from gym.envs.mujoco import HalfCheetahEnv
-from gym.envs.classic_control import PendulumEnv
 
 import rlkit.torch.pytorch_util as ptu
-from rlkit.torch.ppo.ppo_env_replay_buffer import PPOEnvReplayBuffer
+from rlkit.torch.h_diayn.manager_ppo_env_replay_buffer import ManagerPPOEnvReplayBuffer
 from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.torch.h_diayn.manager_ppo_path_collector import ManagerPPOMdpPathCollector
 from rlkit.torch.ppo.policies import DiscretePolicy, MakeDeterministic
-from rlkit.torch.ppo.ppo import PPOTrainer
+from rlkit.torch.ppo.discrete_ppo import DiscretePPOTrainer
 from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.ppo.ppo_torch_batch_rl_algorithm import PPOTorchBatchRLAlgorithm
 
@@ -18,12 +17,13 @@ import torch
 
 def experiment(variant):
     torch.autograd.set_detect_anomaly(True)
-    expl_env = NormalizedBoxEnv(HalfCheetahEnv())
-    eval_env = NormalizedBoxEnv(HalfCheetahEnv())
-    # expl_env = NormalizedBoxEnv(PendulumEnv())
-    # eval_env = NormalizedBoxEnv(PendulumEnv())
+    # expl_env = NormalizedBoxEnv(HalfCheetahEnv())
+    # eval_env = NormalizedBoxEnv(HalfCheetahEnv())
+    expl_env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
+    eval_env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
     obs_dim = expl_env.observation_space.low.size
-    action_dim = eval_env.action_space.low.size
+    # action_dim = eval_env.action_space.low.size
+    skill_dim = 10
 
     M = variant['layer_size']
     vf = FlattenMlp(
@@ -33,11 +33,11 @@ def experiment(variant):
     )
     policy = DiscretePolicy(
         obs_dim=obs_dim,
-        action_dim=action_dim,
+        action_dim=skill_dim,
         hidden_sizes=[M, M],
     )
+    worker = torch.load("data/diayn-10-bipedalWalker/diayn_10_bipedalWalker_2019_07_25_17_18_32_0000--s-0/params.pkl")['trainer/policy']
     eval_policy = MakeDeterministic(policy)
-    worker = 
     eval_step_collector = ManagerPPOMdpPathCollector(
         eval_env,
         eval_policy,
@@ -53,11 +53,12 @@ def experiment(variant):
         gae_lambda=0.97,
         discount=0.995,
     )
-    replay_buffer = PPOEnvReplayBuffer(
+    replay_buffer = ManagerPPOEnvReplayBuffer(
         variant['replay_buffer_size'],
         expl_env,
+        skill_dim=skill_dim
     )
-    trainer = PPOTrainer(
+    trainer = DiscretePPOTrainer(
         env=eval_env,
         policy=policy,
         vf=vf,
@@ -105,6 +106,6 @@ if __name__ == "__main__":
             lr=3e-4,
         ),
     )
-    setup_logger('PPO', variant=variant)
+    setup_logger('PPODIAYNBipedalWalker', variant=variant)
     #ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
     experiment(variant)

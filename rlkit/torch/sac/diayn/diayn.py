@@ -192,6 +192,7 @@ class DIAYNTrainer(TorchTrainer):
             """
             policy_loss = (log_pi - q_new_actions).mean()
 
+            self.eval_statistics['Intrinsic Rewards'] = np.mean(ptu.get_numpy(rewards))
             self.eval_statistics['DF Loss'] = np.mean(ptu.get_numpy(df_loss))
             self.eval_statistics['DF Accuracy'] = np.mean(ptu.get_numpy(df_accuracy))
             self.eval_statistics['QF1 Loss'] = np.mean(ptu.get_numpy(qf1_loss))

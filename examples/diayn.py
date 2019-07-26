@@ -1,3 +1,4 @@
+import gym
 from gym.envs.mujoco import HalfCheetahEnv
 
 import rlkit.torch.pytorch_util as ptu
@@ -13,8 +14,10 @@ from rlkit.torch.sac.diayn.diayn_torch_online_rl_algorithm import DIAYNTorchOnli
 
 
 def experiment(variant):
-    expl_env = NormalizedBoxEnv(HalfCheetahEnv())
-    eval_env = NormalizedBoxEnv(HalfCheetahEnv())
+    # expl_env = NormalizedBoxEnv(HalfCheetahEnv())
+    # eval_env = NormalizedBoxEnv(HalfCheetahEnv())
+    expl_env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
+    eval_env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
     skill_dim = 10
@@ -98,7 +101,7 @@ if __name__ == "__main__":
         layer_size=256,
         replay_buffer_size=int(1E6),
         algorithm_kwargs=dict(
-            num_epochs=3000,
+            num_epochs=1000,
             num_eval_steps_per_epoch=5000,
             num_trains_per_train_loop=1000,
             num_expl_steps_per_train_loop=1000,
@@ -116,6 +119,6 @@ if __name__ == "__main__":
             use_automatic_entropy_tuning=True,
         ),
     )
-    setup_logger('diayn_10', variant=variant)
+    setup_logger('diayn_10_bipedalWalker', variant=variant)
     # ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
     experiment(variant)

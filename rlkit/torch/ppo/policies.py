@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torch import nn as nn
 import torch.nn.functional as F
+from torch.distributions.categorical import Categorical
 
 from rlkit.policies.base import ExplorationPolicy, Policy
 from rlkit.torch.core import eval_np
@@ -25,9 +26,24 @@ class DiscretePolicy(Mlp, ExplorationPolicy):
             input_size=obs_dim,
             output_size=action_dim,
             init_w=init_w,
-            output_activation=F.Softmax
             **kwargs
         )
+        self.output_activation = F.softmax
+
+    def get_action(self, obs_np, deterministic=False, return_log_prob=True):
+        if return_log_prob and not deterministic:
+            actions, log_probs = self.get_actions(obs_np[None], deterministic=deterministic, return_log_prob=return_log_prob)
+            return actions[0, :], {"log_prob": log_probs[0, :]}
+        else:
+            actions = self.get_actions(obs_np[None], deterministic=deterministic, return_log_prob=return_log_prob)
+            return actions[0, :], {}
+
+    def get_actions(self, obs_np, deterministic=False, return_log_prob=True):
+        outputs = eval_np(self, obs_np, deterministic=deterministic, return_log_prob=return_log_prob)
+        if return_log_prob and not deterministic:
+            return outputs[0], outputs[1]
+        else:
+            return outputs[0]
 
     def forward(
             self,
@@ -44,29 +60,27 @@ class DiscretePolicy(Mlp, ExplorationPolicy):
         h = obs
         for i, fc in enumerate(self.fcs):
             h = self.hidden_activation(fc(h))
-        softmax_probs = self.last_fc(h)
+        softmax_probs = self.output_activation(self.last_fc(h))
 
         log_prob = None
-        entropy = None
-        mean_action_log_prob = None
         if deterministic:
-            action = torch.zeros(self.output_size)
-            action[torch.argmax(softmax_probs)] = 1
+            action = torch.zeros(obs.shape[0], self.output_size)
+            action[:, torch.argmax(softmax_probs)] = 1
         else:
-            action = torch.zeros(self.output_size)
+            action = torch.zeros(obs.shape[0], self.output_size)
             categorical =  Categorical(softmax_probs)
             if reparameterize is True:
-                reparam = softmax_probs+ torch.randn(self.output_size)
-                r_categorical = Categorical(reparam / torch.sum(reparam))
+                reparam = self.output_activation(softmax_probs + torch.randn(self.output_size))
+                r_categorical = Categorical(reparam)
                 index = r_categorical.sample()
             else:
                 index = categorical.sample()
             if return_log_prob:
-                log_prob = categorical.log_prob(index)
-            action[index] = 1
+                log_prob = torch.zeros(obs.shape[0], 1)
+                log_prob[:, :] = categorical.log_prob(index)
+            action[:, index] = 1
         return (
-            action, mean, log_std, log_prob, entropy, std,
-            mean_action_log_prob
+            action, log_prob, softmax_probs
         )
 
 class TanhGaussianPolicy(Mlp, ExplorationPolicy):
@@ -169,7 +183,6 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
             action, mean, log_std, log_prob, entropy, std,
             mean_action_log_prob, pre_tanh_value,
         )
-
 
 class MakeDeterministic(Policy):
     def __init__(self, stochastic_policy):
