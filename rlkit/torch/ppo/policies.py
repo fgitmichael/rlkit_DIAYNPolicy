@@ -48,7 +48,7 @@ class DiscretePolicy(Mlp, ExplorationPolicy):
     def forward(
             self,
             obs,
-            reparameterize=True,
+            reparameterize=False,
             deterministic=False,
             return_log_prob=False,
     ):
@@ -69,12 +69,7 @@ class DiscretePolicy(Mlp, ExplorationPolicy):
         else:
             action = torch.zeros(obs.shape[0], self.output_size)
             categorical =  Categorical(softmax_probs)
-            if reparameterize is True:
-                reparam = self.output_activation(softmax_probs + torch.randn(self.output_size))
-                r_categorical = Categorical(reparam)
-                index = r_categorical.sample()
-            else:
-                index = categorical.sample()
+            index = categorical.sample()
             if return_log_prob:
                 log_prob = torch.zeros(obs.shape[0], 1)
                 log_prob[:, :] = categorical.log_prob(index)
@@ -131,7 +126,7 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
     def forward(
             self,
             obs,
-            reparameterize=True,
+            reparameterize=False,
             deterministic=False,
             return_log_prob=False,
     ):
@@ -161,24 +156,16 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
         else:
             tanh_normal = TanhNormal(mean, std)
             if return_log_prob:
-                if reparameterize is True:
-                    action, pre_tanh_value = tanh_normal.rsample(
-                        return_pretanh_value=True
-                    )
-                else:
-                    action, pre_tanh_value = tanh_normal.sample(
-                        return_pretanh_value=True
-                    )
+                action, pre_tanh_value = tanh_normal.sample(
+                    return_pretanh_value=True
+                )
                 log_prob = tanh_normal.log_prob(
                     action,
                     pre_tanh_value=pre_tanh_value
                 )
                 log_prob = log_prob.sum(dim=1, keepdim=True)
             else:
-                if reparameterize is True:
-                    action = tanh_normal.rsample()
-                else:
-                    action = tanh_normal.sample()
+                action = tanh_normal.sample()
         return (
             action, mean, log_std, log_prob, entropy, std,
             mean_action_log_prob, pre_tanh_value,
