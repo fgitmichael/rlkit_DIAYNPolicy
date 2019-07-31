@@ -1,54 +1,7 @@
-import abc
-
 import gtimer as gt
-from rlkit.core.rl_algorithm import BaseRLAlgorithm
-from rlkit.data_management.replay_buffer import ReplayBuffer
-from rlkit.samplers.data_collector import (
-    PathCollector,
-    StepCollector,
-)
+from rlkit.torch.sac.diayn.diayn_torch_online_rl_algorithm import DIAYNTorchOnlineRLAlgorithm
 
-class DIAYNTorchOnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
-    def __init__(
-            self,
-            trainer,
-            exploration_env,
-            evaluation_env,
-            exploration_data_collector: StepCollector,
-            evaluation_data_collector: PathCollector,
-            replay_buffer: ReplayBuffer,
-            batch_size,
-            max_path_length,
-            num_epochs,
-            num_eval_steps_per_epoch,
-            num_expl_steps_per_train_loop,
-            num_trains_per_train_loop,
-            num_train_loops_per_epoch=1,
-            min_num_steps_before_training=0,
-    ):
-        super().__init__(
-            trainer,
-            exploration_env,
-            evaluation_env,
-            exploration_data_collector,
-            evaluation_data_collector,
-            replay_buffer,
-        )
-        self.batch_size = batch_size
-        self.max_path_length = max_path_length
-        self.num_epochs = num_epochs
-        self.num_eval_steps_per_epoch = num_eval_steps_per_epoch
-        self.num_trains_per_train_loop = num_trains_per_train_loop
-        self.num_train_loops_per_epoch = num_train_loops_per_epoch
-        self.num_expl_steps_per_train_loop = num_expl_steps_per_train_loop
-        self.min_num_steps_before_training = min_num_steps_before_training
-
-        assert self.num_trains_per_train_loop >= self.num_expl_steps_per_train_loop, \
-            'Online training presumes num_trains_per_train_loop >= num_expl_steps_per_train_loop'
-
-        # get policy object for assigning skill
-        self.policy = trainer.policy
-
+class DirichletDIAYNTorchOnlineRLAlgorithm(DIAYNTorchOnlineRLAlgorithm):
     def _train(self):
         self.training_mode(False)
         if self.min_num_steps_before_training > 0:
@@ -74,7 +27,8 @@ class DIAYNTorchOnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             )
             gt.stamp('evaluation sampling')
 
-            # set policy  for one epoch
+            # set policy skill for one epoch
+            self.policy.alpha_update(epoch, int(0.9 * self.num_epochs))
             self.policy.skill_reset()
 
             for _ in range(self.num_train_loops_per_epoch):
@@ -99,11 +53,3 @@ class DIAYNTorchOnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             gt.stamp('data storing', unique=False)
 
             self._end_epoch(epoch)
-
-    def to(self, device):
-        for net in self.trainer.networks:
-            net.to(device)
-
-    def training_mode(self, mode):
-        for net in self.trainer.networks:
-            net.train(mode)

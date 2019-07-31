@@ -1,7 +1,7 @@
-from rlkit.samplers.data_collector.path_collector import MdpPathCollector
+from rlkit.torch.sac.diayn.diayn_path_collector import DIAYNMdpPathCollector
 from rlkit.samplers.rollout_functions import rollout
 
-class DIAYNMdpPathCollector(MdpPathCollector):
+class DirichletDIAYNMdpPathCollector(DIAYNMdpPathCollector):
     def collect_new_paths(
             self,
             max_path_length,
@@ -16,6 +16,7 @@ class DIAYNMdpPathCollector(MdpPathCollector):
                 num_steps - num_steps_collected,
             )
 
+            # assign skill vector for evaluation
             self._policy.stochastic_policy.skill_reset()
 
             path = rollout(

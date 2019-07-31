@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 from torch import nn as nn
+from torch.distributions.dirichlet import Dirichlet
+import random
 
 from rlkit.torch.sac.policies import TanhGaussianPolicy
 from rlkit.policies.base import Policy
@@ -43,6 +45,9 @@ class SkillTanhGaussianPolicy(TanhGaussianPolicy):
 
     def get_actions(self, obs_np, deterministic=False):
         return eval_np(self, obs_np, deterministic=deterministic)[0]
+
+    def skill_reset(self):
+        self.skill = random.randint(0, self.skill_dim-1)
 
     def forward(
             self,
@@ -106,6 +111,47 @@ class SkillTanhGaussianPolicy(TanhGaussianPolicy):
             mean_action_log_prob, pre_tanh_value,
         )
 
+class DirichletSkillTanhGaussianPolicy(SkillTanhGaussianPolicy):
+    def __init__(
+            self,
+            hidden_sizes,
+            obs_dim,
+            action_dim,
+            std=None,
+            init_w=1e-3,
+            skill_dim=10,
+            gamma=1e-3,
+            **kwargs
+    ):
+        super().__init__(
+            hidden_sizes=hidden_sizes,
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            std=std,
+            init_w=init_w,
+            skill_dim=skill_dim,
+            **kwargs
+        )
+        self.gamma = gamma
+        self.skill_space = Dirichlet(torch.ones(self.skill_dim))
+        self.skill = self.skill_space.sample().cpu().numpy()
+
+    def get_action(self, obs_np, deterministic=False):
+        # generate (skill_dim, ) matrix that stacks one-hot skill vectors
+        # online reinforcement learning
+        obs_np = np.concatenate((obs_np, self.skill), axis=0)
+        actions = self.get_actions(obs_np[None], deterministic=deterministic)
+        return actions[0, :], {"skill": self.skill}
+
+    def skill_reset(self):
+        self.skill = self.skill_space.sample().cpu().numpy()
+
+    def alpha_update(self, epoch, tau):
+        d_alpha = min(self.gamma+(1-self.gamma)*epoch/tau, 1) * torch.ones(self.skill_dim).cpu()
+        self.skill_space = Dirichlet(torch.tensor(d_alpha))
+
+    def alpha_reset(self):
+        self.skill_space = Dirichlet(torch.ones(self.skill_dim))
 
 class MakeDeterministic(Policy):
     def __init__(self, stochastic_policy):
