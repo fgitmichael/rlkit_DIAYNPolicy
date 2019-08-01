@@ -5,7 +5,7 @@ import rlkit.torch.pytorch_util as ptu
 from rlkit.torch.h_diayn.manager_ppo_env_replay_buffer import ManagerPPOEnvReplayBuffer
 from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
-from rlkit.torch.h_diayn.manager_ppo_path_collector import ManagerPPOMdpPathCollector
+from rlkit.torch.h_diayn.manager_ppo_path_collector import DirichletManagerPPOMdpPathCollector
 from rlkit.torch.ppo.policies import TanhGaussianPolicy, MakeDeterministic
 from rlkit.torch.ppo.ppo import PPOTrainer
 from rlkit.torch.networks import FlattenMlp
@@ -31,20 +31,20 @@ def experiment(variant):
         output_size=1,
         hidden_sizes=[M, M],
     )
-    policy = DiscretePolicy(
+    policy = TanhGaussianPolicy(
         obs_dim=obs_dim,
         action_dim=skill_dim,
         hidden_sizes=[M, M],
     )
-    worker = torch.load("data/ / /params.pkl")['trainer/policy']
+    worker = torch.load("data/dirichlet-diayn-10-bipedalWalker/dirichlet_diayn_10_bipedalWalker_2019_08_01_09_29_04_0000--s-0/params.pkl")['trainer/policy']
     eval_policy = MakeDeterministic(policy)
-    eval_step_collector = ManagerPPOMdpPathCollector(
+    eval_step_collector = DirichletManagerPPOMdpPathCollector(
         eval_env,
         eval_policy,
         worker,
         calculate_advantages=False
     )
-    expl_step_collector = ManagerPPOMdpPathCollector(
+    expl_step_collector = DirichletManagerPPOMdpPathCollector(
         expl_env,
         policy,
         worker,
@@ -58,7 +58,7 @@ def experiment(variant):
         expl_env,
         skill_dim=skill_dim
     )
-    trainer = DiscretePPOTrainer(
+    trainer = PPOTrainer(
         env=eval_env,
         policy=policy,
         vf=vf,
