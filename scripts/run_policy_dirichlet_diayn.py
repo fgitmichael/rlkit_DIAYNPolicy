@@ -9,6 +9,9 @@ import uuid
 from rlkit.core import logger
 import numpy as np
 
+skill_dim = 10
+dirichlet = Dirichlet(torch.ones(skill_dim))
+
 filename = str(uuid.uuid4())
 
 
@@ -23,25 +26,31 @@ def simulate_policy(args):
         policy.cuda()
 
     import cv2
-    video = cv2.VideoWriter('diayn_test.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 30, (640, 480))
+    video = cv2.VideoWriter('dirichlet_diayn_test.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 30, (640, 480))
     index = 0
-    for _
-        path = rollout(
-            env,
-            policy,
-            skill,
-            max_path_length=args.H,
-            render=True,
-        )
-        if hasattr(env, "log_diagnostics"):
-            env.log_diagnostics([path])
-        logger.dump_tabular()
+    for z in range(20):
+        if z < 10:
+            skill = np.zeros(10)
+            skill[z] = 1
+        else:
+            skill = dirichlet.sample()
+        for _ in range(3):
+            path = rollout(
+                env,
+                policy,
+                skill,
+                max_path_length=args.H,
+                render=True,
+            )
+            if hasattr(env, "log_diagnostics"):
+                env.log_diagnostics([path])
+            logger.dump_tabular()
 
-        for i, img in enumerate(path['images']):
-            print(i)
-            video.write(img[:,:,::-1].astype(np.uint8))
-            cv2.imwrite("frames/diayn_test/%06d.png" % index, img[:,:,::-1])
-            index += 1
+            for i, img in enumerate(path['images']):
+                print(i)
+                video.write(img[:,:,::-1].astype(np.uint8))
+                cv2.imwrite("frames/dirichlet_diayn_test/%06d.png" % index, img[:,:,::-1])
+                index += 1
 
     video.release()
     print("wrote video")
