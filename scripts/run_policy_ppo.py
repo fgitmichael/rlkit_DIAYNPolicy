@@ -28,7 +28,6 @@ def simulate_policy(args):
     path = rollout(
         env,
         policy,
-        skill,
         max_path_length=args.H,
         render=True,
     )
