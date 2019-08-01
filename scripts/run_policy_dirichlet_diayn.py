@@ -8,6 +8,7 @@ import argparse
 import uuid
 from rlkit.core import logger
 import numpy as np
+from torch.distributions.dirichlet import Dirichlet
 
 skill_dim = 10
 dirichlet = Dirichlet(torch.ones(skill_dim))
