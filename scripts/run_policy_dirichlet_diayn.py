@@ -33,7 +33,7 @@ def simulate_policy(args):
             skill = np.zeros(10)
             skill[z] = 1
         else:
-            skill = dirichlet.sample()
+            skill = dirichlet.sample().cpu().numpy()
         for _ in range(3):
             path = rollout(
                 env,
