@@ -10,6 +10,7 @@ import rlkit.torch.pytorch_util as ptu
 from rlkit.core.eval_util import create_stats_ordered_dict
 from rlkit.torch.sac.diayn.diayn import DIAYNTrainer
 
+from torch.distributions.dirichlet import Dirichlet
 
 class DirichletDIAYNTrainer(DIAYNTrainer):
     def __init__(
@@ -63,7 +64,6 @@ class DirichletDIAYNTrainer(DIAYNTrainer):
             use_automatic_entropy_tuning=use_automatic_entropy_tuning,
             target_entropy=target_entropy,
         )
-        self.df_criterion = nn.MSELoss()
         self.df_optimizer = optimizer_class(
             self.df.parameters(),
             lr=df_lr,
@@ -81,7 +81,9 @@ class DirichletDIAYNTrainer(DIAYNTrainer):
         DF Loss and Intrinsic Reward
         """
         d_pred = self.df(next_obs)
-        df_loss = self.df_criterion(d_pred, skills)
+        df_loss = Dirichlet(d_pred).log_prob(skills)
+        reward = torch.reshape(-df_loss, rewards.shape)
+        df_loss = df_loss.mean()
 
         """
         Policy and Alpha Loss

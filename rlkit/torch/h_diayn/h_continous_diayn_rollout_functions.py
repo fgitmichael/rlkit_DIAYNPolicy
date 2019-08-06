@@ -5,6 +5,7 @@ def rollout(
         agent,
         worker,
         max_path_length=np.inf,
+        k_steps=10,
         render=False,
         render_kwargs=None,
 ):
@@ -37,8 +38,9 @@ def rollout(
     if render:
         env.render(**render_kwargs)
     while path_length < max_path_length:
-        z, agent_info = agent.get_action(o)
-        worker.skill = z
+        if path_length % k_steps == 0:
+            z, agent_info = agent.get_action(o)
+            worker.skill = z
         a, worker_info = worker.get_action(o) # added worker output
         next_o, r, d, env_info = env.step(a)
         observations.append(o)

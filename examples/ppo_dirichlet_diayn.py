@@ -36,7 +36,7 @@ def experiment(variant):
         action_dim=skill_dim,
         hidden_sizes=[M, M],
     )
-    worker = torch.load("data/dirichlet-diayn-10-bipedalWalker/dirichlet_diayn_10_bipedalWalker_2019_08_01_09_29_04_0000--s-0/params.pkl")['trainer/policy']
+    worker = torch.load("data/dirichlet-diayn-10-bipedalWalker/dirichlet_diayn_10_bipedalWalker_2019_08_02_02_02_13_0000--s-0/params.pkl")['trainer/policy']
     eval_policy = MakeDeterministic(policy)
     eval_step_collector = DirichletManagerPPOMdpPathCollector(
         eval_env,
