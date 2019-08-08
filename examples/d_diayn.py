@@ -16,8 +16,8 @@ from rlkit.torch.sac.diayn.d_diayn_torch_online_rl_algorithm import DirichletDIA
 def experiment(variant):
     # expl_env = NormalizedBoxEnv(HalfCheetahEnv())
     # eval_env = NormalizedBoxEnv(HalfCheetahEnv())
-    expl_env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
-    eval_env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
+    expl_env = NormalizedBoxEnv(gym.make("BipedalWalkerHardcore-v2"))
+    eval_env = NormalizedBoxEnv(gym.make("BipedalWalkerHardcore-v2"))
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
     skill_dim = 10
@@ -119,6 +119,6 @@ if __name__ == "__main__":
             use_automatic_entropy_tuning=True,
         ),
     )
-    setup_logger('dirichlet_diayn_10_bipedalWalker', variant=variant)
+    setup_logger('dirichlet_diayn_10_bipedalWalkerHardcore', variant=variant)
     # ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
     experiment(variant)

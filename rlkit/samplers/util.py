@@ -79,7 +79,7 @@ def rollout(env, agent, max_path_length=np.inf, render=False):
         images=images
     )
 
-def hierarchicalRollout(env, agent, worker, continuous, max_path_length=np.inf, render=False):
+def hierarchicalRollout(env, agent, worker, continuous, max_path_length=np.inf, k_steps=10, render=False):
     """
     The following value for the following keys will be a 2D array, with the
     first dimension corresponding to the time dimension.
@@ -118,11 +118,12 @@ def hierarchicalRollout(env, agent, worker, continuous, max_path_length=np.inf, 
         images.append(img)
 
     while path_length < max_path_length:
-        z, agent_info = agent.get_action(o)
-        if continuous:
-            worker.skill = z
-        else:
-            worker.skill = np.argmax(z)
+        if path_length % k_steps == 0:
+            z, agent_info = agent.get_action(o)
+            if continuous:
+                worker.skill = z
+            else:
+                worker.skill = np.argmax(z)
         a, worker_info = worker.get_action(o)
         next_o, r, d, env_info = env.step(a)
         observations.append(o)

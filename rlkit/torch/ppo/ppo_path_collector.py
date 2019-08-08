@@ -54,7 +54,7 @@ class PPOMdpPathCollector (MdpPathCollector):
                 R = returns[i]
 
             advantages = np_ify(advantages)
-            if advantages.std() is not 0:
+            if advantages.std() != 0.0:
                 advantages = (advantages - advantages.mean()) / advantages.std()
             else:
                 advantages = (advantages - advantages.mean())
