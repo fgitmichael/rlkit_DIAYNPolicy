@@ -104,7 +104,10 @@ class DIAYNTrainer(TorchTrainer):
         """
         z_hat = torch.argmax(skills, dim=1)
         d_pred = self.df(next_obs)
-        rewards, pred_z = torch.max(F.log_softmax(d_pred), dim=1, keepdim=True)
+        d_pred_log_softmax = F.log_softmax(d_pred, 1)
+        _, pred_z = torch.max(d_pred_log_softmax, dim=1, keepdim=True)
+        rewards = d_pred_log_softmax[torch.arange(d_pred.shape[0]), z_hat]
+        rewards = rewards.reshape(-1, 1)
         df_loss = self.df_criterion(d_pred, z_hat)
 
         """
@@ -247,6 +250,7 @@ class DIAYNTrainer(TorchTrainer):
             self.qf2,
             self.target_qf1,
             self.target_qf2,
+            self.df
         ]
 
     def get_snapshot(self):
@@ -256,5 +260,6 @@ class DIAYNTrainer(TorchTrainer):
             qf2=self.qf2,
             target_qf1=self.qf1,
             target_qf2=self.qf2,
+            df=self.df
         )
 

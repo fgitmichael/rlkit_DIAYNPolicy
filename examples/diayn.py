@@ -1,5 +1,6 @@
 import gym
-from gym.envs.mujoco import HalfCheetahEnv
+import argparse
+#from gym.envs.mujoco import HalfCheetahEnv
 
 import rlkit.torch.pytorch_util as ptu
 from rlkit.torch.sac.diayn.diayn_env_replay_buffer import DIAYNEnvReplayBuffer
@@ -13,14 +14,14 @@ from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.sac.diayn.diayn_torch_online_rl_algorithm import DIAYNTorchOnlineRLAlgorithm
 
 
-def experiment(variant):
+def experiment(variant, args):
+    expl_env = NormalizedBoxEnv(gym.make(str(args.env)))
+    eval_env = NormalizedBoxEnv(gym.make(str(args.env)))
     # expl_env = NormalizedBoxEnv(HalfCheetahEnv())
     # eval_env = NormalizedBoxEnv(HalfCheetahEnv())
-    expl_env = NormalizedBoxEnv(gym.make("BipedalWalkerHardcore-v2"))
-    eval_env = NormalizedBoxEnv(gym.make("BipedalWalkerHardcore-v2"))
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
-    skill_dim = 10
+    skill_dim = args.skill_dim
 
     M = variant['layer_size']
     qf1 = FlattenMlp(
@@ -94,6 +95,13 @@ def experiment(variant):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('env', type=str,
+                        help='environment')
+    parser.add_argument('--skill_dim', type=int, default=10,
+                        help='skill dimension')
+    args = parser.parse_args()
+
     # noinspection PyTypeChecker
     variant = dict(
         algorithm="DIAYN",
@@ -119,6 +127,6 @@ if __name__ == "__main__":
             use_automatic_entropy_tuning=True,
         ),
     )
-    setup_logger('diayn_10_bipedalWalkerHardcore', variant=variant)
+    setup_logger('DIAYN_' + str(args.skill_dim) + '_' + args.env, variant=variant)
     # ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
-    experiment(variant)
+    experiment(variant, args)
