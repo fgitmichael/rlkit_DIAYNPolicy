@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+import math
 import numpy as np
 import torch
 import torch.optim as optim
@@ -106,7 +107,7 @@ class DIAYNTrainer(TorchTrainer):
         d_pred = self.df(next_obs)
         d_pred_log_softmax = F.log_softmax(d_pred, 1)
         _, pred_z = torch.max(d_pred_log_softmax, dim=1, keepdim=True)
-        rewards = d_pred_log_softmax[torch.arange(d_pred.shape[0]), z_hat]
+        rewards = d_pred_log_softmax[torch.arange(d_pred.shape[0]), z_hat] - math.log(1/self.policy.skill_dim)
         rewards = rewards.reshape(-1, 1)
         df_loss = self.df_criterion(d_pred, z_hat)
 
