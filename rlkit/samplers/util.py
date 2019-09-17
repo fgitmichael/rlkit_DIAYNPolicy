@@ -164,7 +164,7 @@ def hierarchicalRollout(env, agent, worker, continuous, max_path_length=np.inf, 
         images=images
     )
 
-def DIAYNRollout(env, agent, skill, max_path_length=np.inf, render=False):
+def DIAYNRollout(env, agent, skill, max_path_length=2000, render=False): #np.inf, render=False):
     """
     The following value for the following keys will be a 2D array, with the
     first dimension corresponding to the time dimension.
@@ -213,8 +213,8 @@ def DIAYNRollout(env, agent, skill, max_path_length=np.inf, render=False):
         agent_infos.append(agent_info)
         env_infos.append(env_info)
         path_length += 1
-        if d:
-            break
+        #if d:
+            #break
         o = next_o
         if render:
             img = env.render('rgb_array')
