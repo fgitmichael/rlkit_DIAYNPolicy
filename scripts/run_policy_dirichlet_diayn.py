@@ -29,9 +29,9 @@ def simulate_policy(args):
     import cv2
     video = cv2.VideoWriter('dirichlet_diayn_test.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 30, (640, 480))
     index = 0
-    for z in range(20):
-        if z < 10:
-            skill = np.zeros(10)
+    for z in range(policy.stochastic_policy.skill_dim*2):
+        if z < policy.stochastic_policy.skill_dim:
+            skill = np.zeros(policy.stochastic_policy.skill_dim)
             skill[z] = 1
         else:
             skill = dirichlet.sample().cpu().numpy()

@@ -119,7 +119,7 @@ def rollout(
         env_infos.append(env_info)
         path_length += 1
 
-        if d:
+        if max_path_length == np.inf and d:
             break
         o = next_o
         if render:

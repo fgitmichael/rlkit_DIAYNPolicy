@@ -121,9 +121,9 @@ def hierarchicalRollout(env, agent, worker, continuous, max_path_length=np.inf, 
         if path_length % k_steps == 0:
             z, agent_info = agent.get_action(o)
             if continuous:
-                worker.skill = z
+                worker.stochastic_policy.skill = z
             else:
-                worker.skill = np.argmax(z)
+                worker.stochastic_policy.skill = np.argmax(z)
         a, worker_info = worker.get_action(o)
         next_o, r, d, env_info = env.step(a)
         observations.append(o)
@@ -164,7 +164,7 @@ def hierarchicalRollout(env, agent, worker, continuous, max_path_length=np.inf, 
         images=images
     )
 
-def DIAYNRollout(env, agent, skill, max_path_length=2000, render=False): #np.inf, render=False):
+def DIAYNRollout(env, agent, skill, max_path_length=np.inf, render=False):
     """
     The following value for the following keys will be a 2D array, with the
     first dimension corresponding to the time dimension.
@@ -203,7 +203,7 @@ def DIAYNRollout(env, agent, skill, max_path_length=2000, render=False): #np.inf
         images.append(img)
 
     while path_length < max_path_length:
-        agent.skill = skill
+        agent.stochastic_policy.skill = skill
         a, agent_info = agent.get_action(o)
         next_o, r, d, env_info = env.step(a)
         observations.append(o)
@@ -213,8 +213,8 @@ def DIAYNRollout(env, agent, skill, max_path_length=2000, render=False): #np.inf
         agent_infos.append(agent_info)
         env_infos.append(env_info)
         path_length += 1
-        #if d:
-            #break
+        if max_path_length == np.inf and d:
+            break
         o = next_o
         if render:
             img = env.render('rgb_array')

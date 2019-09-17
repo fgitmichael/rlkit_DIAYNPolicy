@@ -25,7 +25,7 @@ def simulate_policy(args):
     import cv2
     video = cv2.VideoWriter('diayn_test.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 30, (640, 480))
     index = 0
-    for skill in range(10):
+    for skill in range(policy.stochastic_policy.skill_dim):
         path = rollout(
             env,
             policy,
