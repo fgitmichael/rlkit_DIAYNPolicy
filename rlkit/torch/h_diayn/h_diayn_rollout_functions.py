@@ -40,7 +40,7 @@ def rollout(
     while path_length < max_path_length:
         if path_length % k_steps == 0:
             z, agent_info = agent.get_action(o)
-            worker.skill = np.argmax(z)
+            worker.stochastic_policy.skill = np.argmax(z)
         a, worker_info = worker.get_action(o) # added worker output
         next_o, r, d, env_info = env.step(a)
         observations.append(o)
