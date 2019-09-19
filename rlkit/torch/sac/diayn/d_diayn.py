@@ -81,7 +81,7 @@ class DirichletDIAYNTrainer(DIAYNTrainer):
         DF Loss and Intrinsic Reward
         """
         d_pred = self.df(next_obs)
-        df_loss = Dirichlet(d_pred).log_prob(skills)
+        df_loss = Dirichlet(d_pred).log_prob(skills) - Dirichlet(torch.ones(d_pred.shape)).log_prob(skills)
         reward = torch.reshape(-df_loss, rewards.shape)
         df_loss = df_loss.mean()
 
