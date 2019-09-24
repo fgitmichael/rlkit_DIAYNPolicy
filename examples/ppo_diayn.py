@@ -1,5 +1,6 @@
 import gym
-from gym.envs.mujoco import HalfCheetahEnv
+import argparse
+#from gym.envs.mujoco import HalfCheetahEnv
 
 import rlkit.torch.pytorch_util as ptu
 from rlkit.torch.h_diayn.manager_ppo_env_replay_buffer import ManagerPPOEnvReplayBuffer
@@ -19,11 +20,11 @@ def experiment(variant):
     torch.autograd.set_detect_anomaly(True)
     # expl_env = NormalizedBoxEnv(HalfCheetahEnv())
     # eval_env = NormalizedBoxEnv(HalfCheetahEnv())
-    expl_env = NormalizedBoxEnv(gym.make("BipedalWalkerHardcore-v2"))
-    eval_env = NormalizedBoxEnv(gym.make("BipedalWalkerHardcore-v2"))
+    expl_env = NormalizedBoxEnv(gym.make(str(args.env)))
+    eval_env = NormalizedBoxEnv(gym.make(str(args.env)))
     obs_dim = expl_env.observation_space.low.size
-    # action_dim = eval_env.action_space.low.size
-    skill_dim = 10
+    worker = torch.load(str(args.worker))['trainer/policy']
+    skill_dim = worker.skill_dim
 
     M = variant['layer_size']
     vf = FlattenMlp(
@@ -36,8 +37,6 @@ def experiment(variant):
         action_dim=skill_dim,
         hidden_sizes=[M, M],
     )
-    # worker = torch.load("data/diayn-10-bipedalWalker/diayn_10_bipedalWalker_2019_07_31_19_27_25_0000--s-0/params.pkl")['trainer/policy']
-    worker = torch.load("data/diayn-10-bipedalWalkerHardcore/diayn_10_bipedalWalkerHardcore_2019_08_07_04_06_52_0000--s-0/params.pkl")['trainer/policy']
     eval_policy = MakeDeterministic(policy)
     eval_step_collector = ManagerPPOMdpPathCollector(
         eval_env,
@@ -81,6 +80,15 @@ def experiment(variant):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('env', type=str,
+                        help='environment')
+    parser.add_argument('worker', type=str,
+                        help='saved params for worker policy')
+    parser.add_argument('--skill_dim', type=int, default=10,
+                        help='skill dimension')
+    args = parser.parse_args()
+
     # noinspection PyTypeChecker
     T = 2048
     max_ep_len = 1000
@@ -107,6 +115,6 @@ if __name__ == "__main__":
             lr=3e-4,
         ),
     )
-    setup_logger('PPODIAYNBipedalWalkerHardcore', variant=variant)
+    setup_logger('PPODIAYN_' + args.env, variant=variant)
     #ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
     experiment(variant)
