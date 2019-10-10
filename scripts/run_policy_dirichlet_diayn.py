@@ -20,16 +20,16 @@ def simulate_policy(args):
  #   data = joblib.load(args.file)
     data = torch.load(args.file)
     policy = data['evaluation/policy']
-    env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
+    env = NormalizedBoxEnv(gym.make("BipedalWalkerHardcore-v2"))
     print("Policy loaded")
     if args.gpu:
         set_gpu_mode(True)
         policy.cuda()
 
     import cv2
-    video = cv2.VideoWriter('dirichlet_diayn_test.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 30, (640, 480))
+    video = cv2.VideoWriter('dirichlet_diayn_bipedal_walker_hardcore.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 30, (1200, 800))
     index = 0
-    for z in range(policy.stochastic_policy.skill_dim*2):
+    for z in range(policy.stochastic_policy.skill_dim+5):
         if z < policy.stochastic_policy.skill_dim:
             skill = np.zeros(policy.stochastic_policy.skill_dim)
             skill[z] = 1
@@ -50,7 +50,7 @@ def simulate_policy(args):
             for i, img in enumerate(path['images']):
                 print(i)
                 video.write(img[:,:,::-1].astype(np.uint8))
-                cv2.imwrite("frames/dirichlet_diayn_test/%06d.png" % index, img[:,:,::-1])
+#                cv2.imwrite("frames/dirichlet_diayn_bipedal_walker_hardcore/%06d.png" % index, img[:,:,::-1])
                 index += 1
 
     video.release()

@@ -16,32 +16,35 @@ def simulate_policy(args):
  #   data = joblib.load(args.file)
     data = torch.load(args.file)
     policy = data['evaluation/policy']
-    env = NormalizedBoxEnv(gym.make("Ant-v2"))
+    env = NormalizedBoxEnv(gym.make("BipedalWalkerHardcore-v2"))
+ #   env = env.wrapped_env.unwrapped
     print("Policy loaded")
     if args.gpu:
         set_gpu_mode(True)
         policy.cuda()
 
     import cv2
-    video = cv2.VideoWriter('diayn_test.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 30, (640, 480))
+    video = cv2.VideoWriter('diayn_bipedal_walker_hardcore.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 30, (1200, 800))
     index = 0
     for skill in range(policy.stochastic_policy.skill_dim):
-        path = rollout(
-            env,
-            policy,
-            skill,
-            max_path_length=args.H,
-            render=True,
-        )
-        if hasattr(env, "log_diagnostics"):
-            env.log_diagnostics([path])
-        logger.dump_tabular()
+        for _ in range(3):
+            path = rollout(
+                env,
+                policy,
+                skill,
+                max_path_length=args.H,
+                render=True,
+            )
+            if hasattr(env, "log_diagnostics"):
+                env.log_diagnostics([path])
+            logger.dump_tabular()
 
-        for i, img in enumerate(path['images']):
-            print(i)
-            video.write(img[:,:,::-1].astype(np.uint8))
-            cv2.imwrite("frames/diayn_test/%06d.png" % index, img[:,:,::-1])
-            index += 1
+            for i, img in enumerate(path['images']):
+                print(i)
+                print(img.shape)
+                video.write(img[:,:,::-1].astype(np.uint8))
+#                cv2.imwrite("frames/diayn_bipedal_walker_hardcore.avi/%06d.png" % index, img[:,:,::-1])
+                index += 1
 
     video.release()
     print("wrote video")
