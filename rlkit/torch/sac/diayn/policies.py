@@ -153,6 +153,38 @@ class DirichletSkillTanhGaussianPolicy(SkillTanhGaussianPolicy):
     def alpha_reset(self):
         self.skill_space = Dirichlet(torch.ones(self.skill_dim))
 
+class RandomSkillTanhGaussianPolicy(SkillTanhGaussianPolicy):
+    def __init__(
+            self,
+            hidden_sizes,
+            obs_dim,
+            action_dim,
+            std=None,
+            init_w=1e-3,
+            skill_dim=10,
+            gamma=1e-3,
+            **kwargs
+    ):
+        super().__init__(
+            hidden_sizes=hidden_sizes,
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            std=std,
+            init_w=init_w,
+            skill_dim=skill_dim,
+            **kwargs
+        )
+
+    def get_action(self, obs_np, deterministic=False):
+        # generate (skill_dim, ) matrix that stacks one-hot skill vectors
+        # online reinforcement learning
+        obs_np = np.concatenate((obs_np, self.skill), axis=0)
+        actions = self.get_actions(obs_np[None], deterministic=deterministic)
+        return actions[0, :], {"skill": self.skill}
+
+    def skill_reset(self):
+        pass
+
 class MakeDeterministic(Policy):
     def __init__(self, stochastic_policy):
         self.stochastic_policy = stochastic_policy

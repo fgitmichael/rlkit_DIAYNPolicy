@@ -2,7 +2,8 @@ from rlkit.samplers.util import hierarchicalRollout as rollout
 from rlkit.torch.pytorch_util import set_gpu_mode
 from rlkit.envs.wrappers import NormalizedBoxEnv
 import argparse
-import joblib
+import torch
+import gym
 import uuid
 from rlkit.core import logger
 import numpy as np
@@ -11,11 +12,11 @@ filename = str(uuid.uuid4())
 
 
 def simulate_policy(args):
-    manager_data = joblib.load(args.manager_file)
-    worker_data = joblib.load(args.worker_file)
+    manager_data = torch.load(args.manager_file)
+    worker_data = torch.load(args.worker_file)
     policy = manager_data['evaluation/policy']
     worker = worker_data['evaluation/policy']
-    env = NormalizedBoxEnv(gym.make("BipedalWalker-v2"))
+    env = NormalizedBoxEnv(gym.make(str(args.env)))
     print("Policy loaded")
     if args.gpu:
         set_gpu_mode(True)
@@ -48,6 +49,8 @@ def simulate_policy(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('env', type=str,
+                        help='environment')
     parser.add_argument('manager_file', type=str,
                         help='path to the manager snapshot file')
     parser.add_argument('worker_file', type=str,

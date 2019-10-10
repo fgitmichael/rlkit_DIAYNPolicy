@@ -6,6 +6,7 @@ from rlkit.torch.h_diayn.manager_ppo_env_replay_buffer import ManagerPPOEnvRepla
 from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.torch.h_diayn.manager_ppo_path_collector import DirichletManagerPPOMdpPathCollector
+from rlkit.torch.sac.diayn.policies import RandomSkillTanhGaussianPolicy
 from rlkit.torch.ppo.policies import TanhGaussianPolicy, MakeDeterministic
 from rlkit.torch.ppo.ppo import PPOTrainer
 from rlkit.torch.networks import FlattenMlp
@@ -23,7 +24,7 @@ def experiment(variant):
     expl_env = NormalizedBoxEnv(gym.make(str(args.env)))
     eval_env = NormalizedBoxEnv(gym.make(str(args.env)))
     obs_dim = expl_env.observation_space.low.size
-    worker = torch.load(str(args.worker))['trainer/policy']
+    action_dim = expl_env.action_space.low.size
     skill_dim = 10
 
     M = variant['layer_size']
@@ -32,6 +33,12 @@ def experiment(variant):
         output_size=1,
         hidden_sizes=[M, M],
     )
+    worker = RandomSkillTanhGaussianPolicy(
+        obs_dim=obs_dim + skill_dim,
+        action_dim=action_dim,
+        hidden_sizes=[M, M]
+    )
+    torch.save(worker, "data/random_policy_params.pkl")
     policy = TanhGaussianPolicy(
         obs_dim=obs_dim,
         action_dim=skill_dim,
@@ -83,8 +90,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('env', type=str,
                         help='environment')
-    parser.add_argument('worker', type=str,
-                        help='saved params for worker policy')
     parser.add_argument('--skill_dim', type=int, default=10,
                         help='skill dimension')
     args = parser.parse_args()
@@ -96,7 +101,7 @@ if __name__ == "__main__":
     minibatch_size = 64
 
     variant = dict(
-        algorithm="PPO_Dirichlet_DIAYN",
+        algorithm="PPO_Random",
         version="normal",
         layer_size=64,
         replay_buffer_size=T,
@@ -115,6 +120,6 @@ if __name__ == "__main__":
             lr=3e-4,
         ),
     )
-    setup_logger('PPODirichletDIAYNBipedalWalkerHardcore', variant=variant)
+    setup_logger('PPORandomBipedalWalkerHardcore-v2', variant=variant)
     #ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
     experiment(variant)

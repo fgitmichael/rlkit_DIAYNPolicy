@@ -6,12 +6,16 @@ import uuid
 from rlkit.core import logger
 
 filename = str(uuid.uuid4())
-
+import torch
+from gym.envs.mujoco import HalfCheetahEnv
+from rlkit.envs.wrappers import NormalizedBoxEnv
 
 def simulate_policy(args):
-    data = joblib.load(args.file)
+    data = torch.load(str(args.file))
+    #data = joblib.load(str(args.file))
     policy = data['evaluation/policy']
-    env = data['evaluation/env']
+    env = NormalizedBoxEnv(HalfCheetahEnv())
+    #env = data['evaluation/env']
     print("Policy loaded")
     if args.gpu:
         set_gpu_mode(True)
