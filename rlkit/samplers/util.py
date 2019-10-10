@@ -34,8 +34,8 @@ def rollout(env, agent, max_path_length=np.inf, render=False):
     path_length = 0
     if render:
         img = env.render('rgb_array')
-        env.viewer.cam.fixedcamid = 0
-        env.viewer.cam.type = 2
+#        env.viewer.cam.fixedcamid = 0
+#        env.viewer.cam.type = 2
         images.append(img)
 
     while path_length < max_path_length:
@@ -113,8 +113,8 @@ def hierarchicalRollout(env, agent, worker, continuous, max_path_length=np.inf, 
     path_length = 0
     if render:
         img = env.render('rgb_array')
-        env.viewer.cam.fixedcamid = 0
-        env.viewer.cam.type = 2
+#        env.viewer.cam.fixedcamid = 0
+#        env.viewer.cam.type = 2
         images.append(img)
 
     while path_length < max_path_length:
@@ -198,8 +198,8 @@ def DIAYNRollout(env, agent, skill, max_path_length=np.inf, render=False):
     path_length = 0
     if render:
         img = env.render('rgb_array')
-        env.viewer.cam.fixedcamid = 0
-        env.viewer.cam.type = 2
+#        env.viewer.cam.fixedcamid = 0
+#        env.viewer.cam.type = 2
         images.append(img)
 
     while path_length < max_path_length:

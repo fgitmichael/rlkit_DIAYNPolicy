@@ -8,3 +8,6 @@ MANIFEST
 *.egg-info
 \.idea/
 data
+build
+dist
+*.avi
