@@ -1,6 +1,7 @@
 from rlkit.samplers.util import hierarchicalRollout as rollout
 from rlkit.torch.pytorch_util import set_gpu_mode
 from rlkit.envs.wrappers import NormalizedBoxEnv
+from rlkit.torch.sac.diayn.policies import MakeDeterministic
 import argparse
 # import joblib
 import uuid
@@ -16,7 +17,7 @@ def simulate_policy(args):
     manager_data = torch.load(args.manager_file)
     worker_data = torch.load(args.worker_file)
     policy = manager_data['evaluation/policy']
-    worker = worker_data['evaluation/policy']
+    worker = MakeDeterministic(worker_data)
     env = NormalizedBoxEnv(gym.make(str(args.env)))
     print("Policy loaded")
     if args.gpu:
