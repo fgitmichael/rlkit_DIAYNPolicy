@@ -29,12 +29,14 @@ def simulate_policy(args):
     import cv2
     video = cv2.VideoWriter('dirichlet_diayn_bipedal_walker_hardcore.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 30, (1200, 800))
     index = 0
-    for z in range(policy.stochastic_policy.skill_dim+5):
-        if z < policy.stochastic_policy.skill_dim:
-            skill = np.zeros(policy.stochastic_policy.skill_dim)
-            skill[z] = 1
-        else:
-            skill = dirichlet.sample().cpu().numpy()
+#    for z in range(policy.stochastic_policy.skill_dim+5):
+    for z in range(5):
+#        if z < policy.stochastic_policy.skill_dim:
+#            skill = np.zeros(policy.stochastic_policy.skill_dim)
+#            skill[z] = 1
+#        else:
+        skill = dirichlet.sample().cpu().numpy()
+        print(skill)
         for _ in range(3):
             path = rollout(
                 env,
@@ -48,7 +50,7 @@ def simulate_policy(args):
             logger.dump_tabular()
 
             for i, img in enumerate(path['images']):
-                print(i)
+#                print(i)
                 video.write(img[:,:,::-1].astype(np.uint8))
 #                cv2.imwrite("frames/dirichlet_diayn_bipedal_walker_hardcore/%06d.png" % index, img[:,:,::-1])
                 index += 1
