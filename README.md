@@ -40,7 +40,6 @@ Run the following command:
 ```
 python examples/ppo.py
 ```
-
 Here is an example implementation result on the OpenAI Gym environment, Bipedal Walker-v2:
 
 [![example video](https://img.youtube.com/vi/xf2WyVV5kEw/hqdefault.jpg)](https://www.youtube.com/watch?v=xf2WyVV5kEw)

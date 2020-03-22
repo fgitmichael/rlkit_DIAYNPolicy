@@ -1,7 +1,7 @@
 from rlkit.samplers.rollout_functions import rollout
 from rlkit.torch.pytorch_util import set_gpu_mode
 import argparse
-import joblib
+import torch
 import uuid
 from rlkit.core import logger
 
