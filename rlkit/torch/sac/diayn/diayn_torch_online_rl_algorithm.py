@@ -1,5 +1,6 @@
 import abc
 
+import torch
 import gtimer as gt
 from rlkit.core.rl_algorithm import BaseRLAlgorithm
 from rlkit.data_management.replay_buffer import ReplayBuffer
@@ -107,3 +108,12 @@ class DIAYNTorchOnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
     def training_mode(self, mode):
         for net in self.trainer.networks:
             net.train(mode)
+
+class MyDIAYNTorchOnlineAlgorithm(DIAYNTorchOnlineRLAlgorithm):
+    def _end_epoch(self, epoch):
+        DIAYNTorchOnlineRLAlgorithm._end_epoch(self, epoch)
+
+        # Save policy params
+        torch.save(self.policy.state_dict(), './Policy_state_dict.torch_state_dict')
+
+
